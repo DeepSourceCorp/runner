@@ -107,7 +107,7 @@ replicaCount: 1
 ## @param image.tag deepsource runner image tag
 ##
 image:
-  repository: us.gcr.io/deepsource-dev/runner
+  repository: proxy.deepsource.com/images/deepsource-production/runner
   pullPolicy: Always
   tag: ""
 
