@@ -1,7 +1,8 @@
 ## @section Runner configuration Parameters
-## The configuration values for deepsource runner, this will create a secret to be used by the runner
 ##
 
+## The configuration values for deepsource runner, this will create a secret to be used by the runner
+##
 config:
   ## @param config.apps Configuration values for the VCS apps to be used by the runner
   ## apps:
