@@ -173,9 +173,6 @@ func (*MarvinK8sJob) conSecContext() *corev1.SecurityContext {
 			Drop: []corev1.Capability{
 				"all",
 			},
-			Add: []corev1.Capability{
-				"NET_ADMIN",
-			},
 		},
 	}
 }
