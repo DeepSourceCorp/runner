@@ -1,0 +1,172 @@
+# Default values for runner.
+
+# -- number of replicas to deploy
+replicaCount: 1
+
+# -- the namespace to run the analysis jobs in
+taskNamespace: "atlas-jobs"
+
+# -- the image to use for the runner
+image:
+  # -- the repository to pull the image from
+  repository: us.gcr.io/deepsource-dev/runner
+  # -- the image pull policy to use
+  pullPolicy: Always
+  # -- the image tag to use
+  # tag: ""
+
+# -- the image pull secrets to use
+imagePullSecrets: []
+
+# -- the name override for the runner
+nameOverride: ""
+
+# -- the fullname override for the runner
+fullnameOverride: ""
+
+# -- the configuration for the runner, this will create a secret to be used by the runner
+config:
+  # apps:
+  # - github:
+  #     apiHost: ""
+  #     appId: ""
+  #     clientId: ""
+  #     clientSecret: ""
+  #     host: ""
+  #     privateKey: ""
+  #     slug: ""
+  #     webhookSecret: ""
+  #   name: app1
+  #   provider: github
+  # deepsource:
+  #   host: ""
+  #   publicKey: ""
+  # kubernetes:
+  #   namespace: ""
+  #   nodeSelector: {}
+  #   imageRegistry:
+  #     registryUrl: ""
+  #     username: ""
+  #     password: ""
+  # objectStorage:
+  #   backend: ""
+  #   bucket: ""
+  #   credential: ""
+  # runner:
+  #   clientId: ""
+  #   clientSecret: ""
+  #   host: ""
+  #   id: ""
+  #   privateKey: ""
+  #   webhookSecret: ""
+  # saml:
+  #   certificate: ""
+  #   enabled: false
+  #   key: ""
+  #   metadataUrl: ""
+
+# -- whether to use existing config secret for the runner
+useExistingSecret: false
+
+# -- the name of the secret to use for the runner
+secretName: ""
+
+# -- the service account configuration to use for the runner
+serviceAccount:
+  # -- specifies whether a service account should be created
+  create: true
+  # -- annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: "runner"
+
+# -- annotations to add to the runner pod
+podAnnotations: {}
+
+# -- pod security context to be added to runner pods
+podSecurityContext: {}
+
+# -- security context to be added to containers
+securityContext: {}
+
+# -- service configuration for the runner
+service:
+  # -- the type of service to use
+  type: ClusterIP
+  # -- the port to use for the service
+  port: 80
+
+# -- ingress configuration for the runner
+ingress:
+  # -- whether to enable ingress for the runner
+  enabled: false
+  # -- the ingress class to use
+  className: ""
+  # -- annotations to add to the ingress
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  # -- hosts to add to the ingress
+  hosts:
+    - host: runner.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  # -- tls configuration for the ingress
+  tls:
+    # - secretName: tls-runner-deepsource-com
+    #   hosts:
+    #     - runner.example.com
+
+# -- the resources to allocate for the runner
+resources:
+  limits:
+    cpu: 200m
+    memory: 1Gi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# -- the autoscaling configuration for the runner
+autoscaling:
+  # -- whether to enable autoscaling for the runner
+  enabled: false
+  # -- the minimum number of replicas to scale down to
+  minReplicas: 1
+  # -- the maximum number of replicas to scale up to
+  maxReplicas: 100
+  # -- the target CPU utilization percentage to scale up to
+  targetCPUUtilizationPercentage: 80
+  # -- the target memory utilization percentage to scale up to
+  targetMemoryUtilizationPercentage: 80
+
+# -- the node selector to use for the runner
+nodeSelector: {}
+
+# -- node tolerations for server scheduling to nodes with taints
+tolerations: []
+
+# -- pod affinity configuration for the runner
+affinity: {}
+
+# -- the configuration for the rqlite database
+rqlite:
+  image:
+    repository: "rqlite/rqlite"
+    pullPolicy: IfNotPresent
+    tag: "7.20.6"
+
+  # -- the number of replicas to deploy for the rqlite database
+  replicaCount: 1
+
+  # -- the storage size for the rqlite database
+  storageSize: 1Gi
+
+  # -- the resources to allocate for the rqlite database
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1Gi
+    requests:
+      cpu: 100m
+      memory: 128Mi

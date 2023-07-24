@@ -1,0 +1,52 @@
+steps:
+
+# Decrypt the file containing the SSH key
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+  - kms
+  - decrypt
+  - --ciphertext-file=cloudbuild/id_rsa_dev.enc
+  - --plaintext-file=/root/.ssh/id_rsa
+  - --location=global
+  - --keyring=github-artifacts-repo
+  - --key=v1
+  volumes:
+  - name: 'ssh'
+    path: /root/.ssh
+
+# Set up git with key and domain
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    chmod 600 /root/.ssh/id_rsa
+    cat <<EOF >/root/.ssh/config
+    Hostname github.com
+    IdentityFile /root/.ssh/id_rsa
+    EOF
+    mv cloudbuild/known_hosts /root/.ssh/known_hosts
+  volumes:
+  - name: 'ssh'
+    path: /root/.ssh
+
+# Copy key for cloning private dependency
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    cp -r /root/.ssh /workspace/.ssh
+  volumes:
+  - name: 'ssh'
+    path: /root/.ssh
+
+## Build and push
+- name: 'gcr.io/kaniko-project/executor:v0.16.0'
+  args:
+  - --destination=us.gcr.io/deepsource-dev/runner:$_IMAGE_TAG
+  - --dockerfile=Dockerfile
+  - --cache=true
+
+options:
+  machineType: "E2_HIGHCPU_8"

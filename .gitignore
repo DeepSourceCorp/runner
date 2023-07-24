@@ -1,0 +1,8 @@
+bin/**
+**/config.yaml
+
+go.sum
+
+# Others
+.DS_Store
+.vscode/**
