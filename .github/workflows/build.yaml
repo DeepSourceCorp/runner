@@ -1,5 +1,4 @@
-name: DeepSource Runner builds
-
+name: CI
 on:
   push:
     branches:
