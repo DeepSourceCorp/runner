@@ -16,7 +16,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       
       - name: Set tag & repo name for PR builds
-        if: ${{ !contains(fromJson('["refs/heads/master" ]'), github.ref) }}
+        if: ${{ !contains(fromJson('["refs/heads/master" ]'), github.ref) && !startsWith(github.event.ref, 'refs/tags/v') }}
         run: |
           echo "IMAGE_TAG=PR-${{ github.event.number }}" >> $GITHUB_ENV
           echo "REPO=deepsource-dev" >> $GITHUB_ENV
