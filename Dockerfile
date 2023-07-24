@@ -4,7 +4,7 @@ RUN apk add --no-cache git openssh-client gcc libc-dev
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY go.mod ./
 RUN go mod download
 
 COPY . .
