@@ -1,172 +1,290 @@
-# Default values for runner.
+## @section Runner configuration Parameters
+## The configuration values for deepsource runner, this will create a secret to be used by the runner
+##
 
-# -- number of replicas to deploy
+config:
+  ## @param config.apps Configuration values for the VCS apps to be used by the runner
+  ## apps:
+  ## - name: app1
+  ##   provider: github
+  ##   github:
+  ##     apiHost: ""
+  ##     appId: ""
+  ##     clientId: ""
+  ##     clientSecret: ""
+  ##     host: ""
+  ##     privateKey: ""
+  ##     slug: ""
+  ##     webhookSecret: ""
+  ##
+  apps: []
+  ## @param config.deepsource Configuration values for the deepsource remote host
+  ## deepsource:
+  ##   host: "example.app.deepsource.com"
+  ##   publicKey: ""
+  ##
+  deepsource: {}
+  ## Configuration values for the kubernetes cluster
+  ##
+  kubernetes:
+    ## @param config.kubernetes.namespace The namespace to schedule the tasks in
+    ##
+    namespace: ""
+    ## @param config.kubernetes.nodeSelector The node selector to use for the tasks
+    ##
+    nodeSelector: {}
+    ## The image regitry configuration to use for the tasks
+    ##
+    imageRegistry:
+      ## @param config.kubernetes.imageRegistry.registryUrl The registry url to use for the task images
+      ##
+      registryUrl: ""
+      ## @param config.kubernetes.imageRegistry.username The username to use for the image registry
+      ##
+      username: ""
+      ## @param config.kubernetes.imageRegistry.password The password to use for the image registry
+      ##
+      password: ""
+  ## Configuration values for the object storage to use for the runner
+  ##
+  objectStorage:
+    ## @param config.objectStorage.backend The backend to use for the object storage (e.g gcs)
+    ##
+    backend: ""
+    ## @param config.objectStorage.bucket The bucket to use for the object storage
+    ##
+    bucket: ""
+    ## @param config.objectStorage.credential The credentials value to use for the object storage
+    ##
+    credential: ""
+  ## Configuration values for the runner
+  ##
+  runner:
+    ## @param config.runner.id The id of the runner
+    ##
+    id: ""
+    ## @param config.runner.host The host of the runner to use
+    ##
+    host: ""
+    ## @param config.runner.clientId The client id to use for the runner
+    ##
+    clientId: ""
+    ## @param config.runner.clientSecret The client secret to use for the runner
+    ##
+    clientSecret: ""
+    ## @param config.runner.privateKey The private key to use for the runner
+    ##
+    privateKey: ""
+    ## @param config.runner.webhookSecret The webhook secret to use for the runner
+    ##
+    webhookSecret: ""
+  ## Configuration values for the SAML2.0 identity provider
+  ##
+  saml:
+    ## @param config.saml.enabled Whether to enable SAML2.0 authentication
+    ##
+    enabled: false
+    ## @param config.saml.certificate The certificate to use for the runner as service provider
+    ##
+    certificate: ""
+    ## @param config.saml.key The private key to use for the runner as service provider
+    ##
+    key: ""
+    ## @param config.saml.metadataUrl The metadata url to use for the identity provider
+    metadataUrl: ""
+
+## @section Common Parameters
+##
+
+## @param replicaCount Number of deepsource runner replicas to deploy
+##
 replicaCount: 1
 
-# -- the namespace to run the analysis jobs in
-taskNamespace: "atlas-jobs"
-
-# -- the image to use for the runner
+## Deepsource runner image version
+## @param image.repository deepsource runner image repository
+## @param image.pullPolicy deepsource runner image pull policy
+## @param image.tag deepsource runner image tag
+##
 image:
-  # -- the repository to pull the image from
   repository: us.gcr.io/deepsource-dev/runner
-  # -- the image pull policy to use
   pullPolicy: Always
-  # -- the image tag to use
-  # tag: ""
+  tag: ""
 
-# -- the image pull secrets to use
+## @param imagePullSecrets deepsource runner image pull secrets
 imagePullSecrets: []
 
-# -- the name override for the runner
+## @param nameOverride String to partially override runner.name
+##
 nameOverride: ""
 
-# -- the fullname override for the runner
+## @param fullnameOverride String to partially override runner.name
+##
 fullnameOverride: ""
 
-# -- the configuration for the runner, this will create a secret to be used by the runner
-config:
-  # apps:
-  # - github:
-  #     apiHost: ""
-  #     appId: ""
-  #     clientId: ""
-  #     clientSecret: ""
-  #     host: ""
-  #     privateKey: ""
-  #     slug: ""
-  #     webhookSecret: ""
-  #   name: app1
-  #   provider: github
-  # deepsource:
-  #   host: ""
-  #   publicKey: ""
-  # kubernetes:
-  #   namespace: ""
-  #   nodeSelector: {}
-  #   imageRegistry:
-  #     registryUrl: ""
-  #     username: ""
-  #     password: ""
-  # objectStorage:
-  #   backend: ""
-  #   bucket: ""
-  #   credential: ""
-  # runner:
-  #   clientId: ""
-  #   clientSecret: ""
-  #   host: ""
-  #   id: ""
-  #   privateKey: ""
-  #   webhookSecret: ""
-  # saml:
-  #   certificate: ""
-  #   enabled: false
-  #   key: ""
-  #   metadataUrl: ""
-
-# -- whether to use existing config secret for the runner
-useExistingSecret: false
-
-# -- the name of the secret to use for the runner
-secretName: ""
-
-# -- the service account configuration to use for the runner
+## ServiceAccount configuration
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+## @param serviceAccount.create Specifies whether a ServiceAccount should be created
+## @param serviceAccount.annotations Annotations for service account. Evaluated as a template. Only used if `create` is `true`.
+## @param serviceAccount.name Name of the service account to use. If not set and create is true, a name is generated using the fullname template.
+##
 serviceAccount:
-  # -- specifies whether a service account should be created
   create: true
-  # -- annotations to add to the service account
   annotations: {}
-  # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
-  name: "runner"
+  name: ""
 
-# -- annotations to add to the runner pod
+## @param podAnnotations Annotations for the deepsource runner pods
+## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+##
 podAnnotations: {}
 
-# -- pod security context to be added to runner pods
+## @param podSecurityContext Security context policies to add to the deepsource runner pods
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+##
 podSecurityContext: {}
 
-# -- security context to be added to containers
+## @param securityContext Security context policies to add to the containers
+##
 securityContext: {}
 
-# -- service configuration for the runner
+## deepsource runner service parameters
+##
 service:
-  # -- the type of service to use
+  ## @param service.type deepsource runner service type
+  ##
   type: ClusterIP
-  # -- the port to use for the service
+  ## @param service.port deepsource runner service HTTP port
+  ##
   port: 80
 
-# -- ingress configuration for the runner
+## DeepSource runner ingress parameters
+## ref: https://kubernetes.io/docs/user-guide/ingress/
+##
 ingress:
-  # -- whether to enable ingress for the runner
+  ## @param ingress.enabled Enable ingress record generation for deepsource runner
+  ##
   enabled: false
-  # -- the ingress class to use
+  ## @param ingress.className IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+  ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster.
+  ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
+  ##
   className: ""
-  # -- annotations to add to the ingress
+  ## @param ingress.annotations Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations.
+  ## Use this parameter to set the required annotations for cert-manager, see
+  ## ref: https://cert-manager.io/docs/usage/ingress/#supported-annotations
+  ## e.g:
+  ## annotations:
+  ##   kubernetes.io/ingress.class: nginx
+  ##   cert-manager.io/cluster-issuer: cluster-issuer-name
+  ##
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  # -- hosts to add to the ingress
-  hosts:
-    - host: runner.example.com
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  # -- tls configuration for the ingress
-  tls:
-    # - secretName: tls-runner-deepsource-com
-    #   hosts:
-    #     - runner.example.com
+  ## @param ingress.hosts Deepsource runner Ingress hosts
+  ## hosts:
+  ##   - host: runner.example.com
+  ##     paths:
+  ##       - path: /
+  ##         pathType: ImplementationSpecific
+  hosts: []
+  ## @param ingress.tls Deepsource runner Ingress TLS configuration
+  ## tls:
+  ##   - secretName: tls-runner-deepsource-com
+  ##     hosts:
+  ##       - runner.example.com
+  tls: []
 
-# -- the resources to allocate for the runner
+## DeepSource runner resource requests and limits
+## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+##
 resources:
+  ## The resources limits for the deepsource runner containers
+  ##
   limits:
+    ## @param resources.limits.cpu The resources limits for the deepsource runner containers
+    ##
     cpu: 200m
+    ## @param resources.limits.memory The resources limits for the deepsource runner containers
+    ##
     memory: 1Gi
+  ## The requested resources for the deepsource runner containers
+  ##
   requests:
+    ## @param resources.requests.cpu The requested cpu for the deepsource runner containers
+    ##
     cpu: 100m
+    ## @param resources.requests.memory The requested memory for the deepsource runner containers
+    ##
     memory: 128Mi
 
-# -- the autoscaling configuration for the runner
+## Autoscaling parameters
+## ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+## @param autoscaling.enabled Enable Horizontal POD autoscaling for deepsource runner
+## @param autoscaling.minReplicas Minimum number of deepsource runner replicas
+## @param autoscaling.maxReplicas Maximum number of deepsource runner replicas
+## @param autoscaling.targetCPUUtilizationPercentage Target CPU utilization percentage
+## @param autoscaling.targetMemoryUtilizationPercentage Target Memory utilization percentage
+##
 autoscaling:
-  # -- whether to enable autoscaling for the runner
   enabled: false
-  # -- the minimum number of replicas to scale down to
   minReplicas: 1
-  # -- the maximum number of replicas to scale up to
   maxReplicas: 100
-  # -- the target CPU utilization percentage to scale up to
   targetCPUUtilizationPercentage: 80
-  # -- the target memory utilization percentage to scale up to
   targetMemoryUtilizationPercentage: 80
 
-# -- the node selector to use for the runner
+## @param nodeSelector Node labels for deepsource runner pods assignment
+## ref: https://kubernetes.io/docs/user-guide/node-selection/
+##
 nodeSelector: {}
 
-# -- node tolerations for server scheduling to nodes with taints
+## @param tolerations Tolerations for deepsource runner pods assignment
+## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+##
 tolerations: []
 
-# -- pod affinity configuration for the runner
+## @param affinity Affinity for deepsource runner pods assignment
+## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+##
 affinity: {}
 
-# -- the configuration for the rqlite database
+## @section RQLite configuration parameters
+##
+
+## RQLite configuration parameters
 rqlite:
+  ## RQLite image version
+  ## @param rqlite.image.repository RQLite image repository
+  ## @param rqlite.image.pullPolicy RQLite image pull policy
+  ## @param rqlite.image.tag RQLite image tag
+  ##
   image:
     repository: "rqlite/rqlite"
     pullPolicy: IfNotPresent
     tag: "7.20.6"
 
-  # -- the number of replicas to deploy for the rqlite database
+  ## @param rqlite.replicaCount Number of rqlite replicas to deploy
+  ##
   replicaCount: 1
 
-  # -- the storage size for the rqlite database
+  ## @param rqlite.storageSize The size of the persistent volume to use for the rqlite database
+  ##
   storageSize: 1Gi
 
-  # -- the resources to allocate for the rqlite database
+  ## RQLite resource requests and limits
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
   resources:
+    ## The resources limits for the rqlite containers
+    ##
     limits:
+      ## @param rqlite.resources.limits.cpu The resources limits for the rqlite containers
+      ##
       cpu: 200m
+      ## @param rqlite.resources.limits.memory The resources limits for the rqlite containers
+      ##
       memory: 1Gi
+    ## The requested resources for the rqlite containers
+    ##
     requests:
+      ## @param rqlite.resources.requests.cpu The requested cpu for the rqlite containers
+      ##
       cpu: 100m
+      ## @param rqlite.resources.requests.memory The requested memory for the rqlite containers
+      ##
       memory: 128Mi
