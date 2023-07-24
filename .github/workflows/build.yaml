@@ -1,10 +1,11 @@
 name: DeepSource Runner builds
+
 on:
   push:
     branches:
       - master
-  tags:
-      - '**'
+    tags:
+        - '**'
   pull_request:
 
 jobs:
