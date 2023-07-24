@@ -11,57 +11,56 @@ on:
 jobs:
   build:
     runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      
+      - name: Set tag & repo name for PR builds
+        if: ${{ !contains(fromJson('["refs/heads/master", "refs/heads/main" ]'), github.ref) }}
+        run: |
+          echo "IMAGE_TAG=PR-${{ github.event.number }}" >> $GITHUB_ENV
+          echo "REPO=deepsource-dev" >> $GITHUB_ENV
 
-  steps:
-    - uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
+      - name: Set tag & repo name for master builds
+        if: contains(fromJson('["refs/heads/master", "refs/heads/main"]'), github.ref)
+        run: |
+          echo "IMAGE_TAG=master" >> $GITHUB_ENV
+          echo "REPO=deepsource-dev" >> $GITHUB_ENV
+
+      - name: Set tag & repo name for releases
+        if: startsWith(github.event.ref, 'refs/tags/v')
+        run: |
+          echo "IMAGE_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
+          echo "REPO=deepsource-production" >> $GITHUB_ENV
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Authenticate to Google Cloud Development
+        if: ${{ !startsWith(github.event.ref, 'refs/tags/v') }}
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.DS_GHA_SA_DEV }}"
+      
+      - name: Authenticate to Google Cloud Production
+        if: startsWith(github.event.ref, 'refs/tags/v')
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.DS_GHA_SA_PROD }}"
+
+      - name: Set up Cloud SDK
+        uses: "google-github-actions/setup-gcloud@v1"
+
+      - name: Configure docker for gcr
+        run: |
+          gcloud auth configure-docker
     
-    - name: Set tag & repo name for PR builds
-      if: ${{ !contains(fromJson('["refs/heads/master", "refs/heads/main" ]'), github.ref) }}
-      run: |
-        echo "IMAGE_TAG=PR-${{ github.event.number }}" >> $GITHUB_ENV
-        echo "REPO=deepsource-dev" >> $GITHUB_ENV
-
-    - name: Set tag & repo name for master builds
-      if: contains(fromJson('["refs/heads/master", "refs/heads/main"]'), github.ref)
-      run: |
-        echo "IMAGE_TAG=master" >> $GITHUB_ENV
-        echo "REPO=deepsource-dev" >> $GITHUB_ENV
-
-    - name: Set tag & repo name for releases
-      if: startsWith(github.event.ref, 'refs/tags/v')
-      run: |
-        echo "IMAGE_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
-        echo "REPO=deepsource-production" >> $GITHUB_ENV
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-    
-    - name: Authenticate to Google Cloud Development
-      if: ${{ !startsWith(github.event.ref, 'refs/tags/v') }}
-      uses: "google-github-actions/auth@v1"
-      with:
-        credentials_json: "${{ secrets.DS_GHA_SA_DEV }}"
-    
-    - name: Authenticate to Google Cloud Production
-      if: startsWith(github.event.ref, 'refs/tags/v')
-      uses: "google-github-actions/auth@v1"
-      with:
-        credentials_json: "${{ secrets.DS_GHA_SA_PROD }}"
-
-    - name: Set up Cloud SDK
-      uses: "google-github-actions/setup-gcloud@v1"
-
-    - name: Configure docker for gcr
-      run: |
-        gcloud auth configure-docker
-  
-    - name: Build and push
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: true
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        tags: us.gcr.io/${{ env.REPO }}/runner:${{ env.IMAGE_TAG }}
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: us.gcr.io/${{ env.REPO }}/runner:${{ env.IMAGE_TAG }}
