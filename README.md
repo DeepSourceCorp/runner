@@ -1,5 +1,6 @@
 # runner
 DeepSource self-hosted runners.  The power of DeepSource Cloud with the safety of your infrastructure.
+[![DeepSource](https://app.deepsource.com/gh/DeepSourceCorp/runner.svg/?label=active+issues&show_trend=true&token=Cs-Qwzy6mON1zpyhLBHdzRC_)](https://app.deepsource.com/gh/DeepSourceCorp/runner/?ref=repository-badge)
 
 ## Notes:
 
