@@ -7,6 +7,8 @@ import (
 	"os"
 
 	"github.com/deepsourcecorp/runner/config"
+	"github.com/deepsourcecorp/runner/rqlite"
+	"github.com/deepsourcecorp/runner/rqlite/migrations"
 	"golang.org/x/exp/slog"
 )
 
@@ -62,6 +64,22 @@ func main() {
 		slog.Error("failed to load config", slog.Any("err", err))
 		os.Exit(1)
 	}
+	db, err := rqlite.Connect(c.RQLite.Host, c.RQLite.Port)
+	if err != nil {
+		slog.Error("failed to connect to rqlite", slog.Any("err", err))
+		os.Exit(1)
+	}
+	migrator, err := migrations.NewMigrator(db)
+	if err != nil {
+		slog.Error("failed to initialize migrator", slog.Any("err", err))
+		os.Exit(1)
+	}
+	err = migrator.Migrate()
+	if err != nil {
+		slog.Error("failed to migrate database", slog.Any("err", err))
+		os.Exit(1)
+	}
+
 	s := NewServer(c)
 	r, err := s.Router()
 	if err != nil {
