@@ -3,6 +3,7 @@ package artifact
 import (
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/deepsourcelabs/artifacts/storage"
 	"github.com/labstack/echo/v4"
@@ -127,4 +128,8 @@ func (h *Handler) HandleAutofix(c echo.Context) error {
 		}
 	}
 	return c.JSON(200, autofixArtifactsResponse)
+}
+
+func (h *Handler) HandleOptions(c echo.Context) error {
+	return c.NoContent(http.StatusOK)
 }

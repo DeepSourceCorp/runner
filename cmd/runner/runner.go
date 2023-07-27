@@ -7,8 +7,12 @@ import (
 	"time"
 
 	"github.com/deepsourcecorp/runner/artifact"
+	"github.com/deepsourcecorp/runner/auth/model"
+	"github.com/deepsourcecorp/runner/auth/saml"
+	store "github.com/deepsourcecorp/runner/auth/store/rqlite"
 	"github.com/deepsourcecorp/runner/config"
 	"github.com/deepsourcecorp/runner/orchestrator"
+	"github.com/deepsourcecorp/runner/rqlite"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/exp/slog"
@@ -87,6 +91,11 @@ func (s *Server) Router() (*Router, error) {
 		return nil, fmt.Errorf("router failed to initialize: %w", err)
 	}
 
+	saml, err := SAMLHandler(s.Config)
+	if err != nil {
+		return nil, fmt.Errorf("router failed to initialize: %w", err)
+	}
+
 	corsMiddleware := artifact.CORSMiddleware(s.Config.DeepSource.Host.String())
 
 	router := &Router{
@@ -104,6 +113,13 @@ func (s *Server) Router() (*Router, error) {
 			{Method: "POST", Path: "/apps/:app_id/auth/refresh", HandlerFunc: auth.OAuthHandlers.HandleRefresh},
 			{Method: "GET", Path: "/apps/:app_id/auth/user", HandlerFunc: auth.OAuthHandlers.HandleUser},
 
+			// SAML routes.
+			{Method: "*", Path: "/saml/*", HandlerFunc: saml.SAMLHandler()},
+			{Method: http.MethodGet, Path: "/apps/saml/auth/authorize", HandlerFunc: saml.AuthorizationHandler()},
+			{Method: http.MethodGet, Path: "/apps/saml/auth/session", HandlerFunc: saml.HandleSession},
+			{Method: http.MethodPost, Path: "/apps/saml/auth/token", HandlerFunc: saml.HandleToken},
+			{Method: http.MethodPost, Path: "/apps/saml/auth/refresh", HandlerFunc: saml.HandleRefresh},
+
 			// Orchestrator routes.
 			{Method: http.MethodPost, Path: "apps/:app_id/tasks/analysis", HandlerFunc: orchestrator.HandleAnalysis, Middleware: []echo.MiddlewareFunc{auth.TokenMiddleware}},
 			{Method: http.MethodPost, Path: "apps/:app_id/tasks/autofix", HandlerFunc: orchestrator.HandleAutofix, Middleware: []echo.MiddlewareFunc{auth.TokenMiddleware}},
@@ -117,12 +133,45 @@ func (s *Server) Router() (*Router, error) {
 			{Method: "*", Path: "apps/:app_id/installation/new", HandlerFunc: github.HandleInstallation},
 
 			// Artifact routes.
-			{Method: http.MethodOptions, Path: "apps/:app_id/artifacts/*", HandlerFunc: func(c echo.Context) error { return c.JSON(http.StatusOK, map[string]interface{}{"status": "ok"}) }, Middleware: []echo.MiddlewareFunc{corsMiddleware}},
+			{Method: http.MethodOptions, Path: "apps/:app_id/artifacts/*", HandlerFunc: artifacts.HandleOptions, Middleware: []echo.MiddlewareFunc{corsMiddleware}},
 			{Method: http.MethodPost, Path: "apps/:app_id/artifacts/analysis", HandlerFunc: artifacts.HandleAnalysis, Middleware: []echo.MiddlewareFunc{corsMiddleware, auth.SessionMiddleware}},
 			{Method: http.MethodPost, Path: "apps/:app_id/artifacts/autofix", HandlerFunc: artifacts.HandleAutofix, Middleware: []echo.MiddlewareFunc{corsMiddleware, auth.SessionMiddleware}},
 		},
 	}
 	return router, nil
+}
+
+func SAMLHandler(c *config.Config) (*saml.Handler, error) {
+	samlOpts := &saml.SAMLOpts{
+		Certificate: c.SAML.Certificate,
+		MetadataURL: c.SAML.MetadataURL,
+		RootURL:     c.Runner.Host,
+	}
+
+	middleware, err := saml.NewSAMLMiddleware(context.Background(), samlOpts, http.DefaultClient)
+	if err != nil {
+		slog.Error("error initializing SAML middleware", slog.Any("error", err), slog.Any("component", "main"))
+		return nil, err
+	}
+
+	runner := &model.Runner{
+		ID:           c.Runner.ID,
+		ClientID:     c.Runner.ClientID,
+		ClientSecret: c.Runner.ClientSecret,
+		PrivateKey:   c.Runner.PrivateKey,
+	}
+
+	deepsource := &model.DeepSource{
+		Host: c.DeepSource.Host,
+	}
+
+	db, err := rqlite.Connect(c.RQLite.Host, c.RQLite.Port)
+	if err != nil {
+		return nil, fmt.Errorf("error initalizing auth: %w", err)
+	}
+	store := store.New(db)
+
+	return saml.NewHandler(runner, deepsource, middleware, store), nil
 }
 
 func StartCleanup(ctx context.Context, cfg *config.Config) error {

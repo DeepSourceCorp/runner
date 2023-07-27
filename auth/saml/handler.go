@@ -1,28 +1,34 @@
 package saml
 
 import (
-	"errors"
 	"net/http"
+	"time"
 
 	"github.com/crewjam/saml/samlsp"
 	"github.com/deepsourcecorp/runner/auth/model"
+	"github.com/deepsourcecorp/runner/auth/store"
+	"github.com/deepsourcecorp/runner/auth/token"
 	"github.com/labstack/echo/v4"
 	"github.com/segmentio/ksuid"
+	"golang.org/x/oauth2"
 )
 
 type Handler struct {
-	runner     *model.Runner
-	deepsource *model.DeepSource
-	middleware *samlsp.Middleware
-	store      SessionStore
+	runner       *model.Runner
+	deepsource   *model.DeepSource
+	middleware   *samlsp.Middleware
+	tokenService *token.Service
+	store        store.Store
 }
 
-func NewHandler(runner *model.Runner, deepsource *model.DeepSource, middleware *samlsp.Middleware, store SessionStore) *Handler {
+func NewHandler(runner *model.Runner, deepsource *model.DeepSource, middleware *samlsp.Middleware, store store.Store) *Handler {
+	tokenService := token.NewService(runner.ID, runner.PrivateKey)
 	return &Handler{
-		runner:     runner,
-		deepsource: deepsource,
-		middleware: middleware,
-		store:      store,
+		runner:       runner,
+		deepsource:   deepsource,
+		middleware:   middleware,
+		tokenService: tokenService,
+		store:        store,
 	}
 }
 
@@ -53,79 +59,88 @@ func (h *Handler) AuthorizationHandler() echo.HandlerFunc {
 			return
 		}
 
-		_, err := h.middleware.Session.GetSession(r)
+		s, err := h.middleware.Session.GetSession(r)
 		if err == samlsp.ErrNoSession {
 			h.middleware.HandleStartAuthFlow(w, r)
 			return
 		}
-
 		if err != nil {
 			h.middleware.OnError(w, r, err)
 			return
 		}
 
-		token, _ := r.Cookie("token")
-		if token == nil {
+		session, ok := s.(samlsp.SessionWithAttributes)
+		if !ok {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte("unauthorized"))
 			return
 		}
+		attr := session.GetAttributes()
 
-		session := NewSession()
-		session.SetBackendToken(token.Value)
-		if err := h.store.Create(session); err != nil {
+		user := &model.User{
+			Login: attr.Get("login"),
+			Email: attr.Get("email"),
+			Name:  attr.Get("first_name") + " " + attr.Get("last_name"),
+		}
+		accessToken, err := h.tokenService.GetAccessToken(user)
+		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("internal server error"))
+			w.Write([]byte(err.Error()))
 			return
 		}
 
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session",
-			Value:    session.ID,
+			Value:    accessToken,
 			Path:     "/",
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
 			HttpOnly: true,
 		})
 
-		http.Redirect(w, r, "/apps/saml/oauth2/session?state="+request.State, http.StatusTemporaryRedirect)
+		refreshToken, err := h.tokenService.GetRefreshToken(user)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refresh",
+			Value:    refreshToken,
+			Path:     "/refresh",
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
+			HttpOnly: true,
+		})
+
+		http.Redirect(w, r, "/apps/saml/auth/session?state="+request.State, http.StatusTemporaryRedirect)
 	})
 
 	return echo.WrapHandler(handler)
 }
 
 type SessionRequest struct {
-	State     string `query:"state"`
-	SessionID string
-}
-
-func (r *SessionRequest) Parse(c echo.Context) error {
-	r.State = c.QueryParam("state")
-	cookie, err := c.Cookie("session")
-	if err != nil {
-		return err
-	}
-	if cookie == nil {
-		return errors.New("session cookie not found")
-	}
-	r.SessionID = cookie.Value
-	return nil
+	State string `query:"state"`
 }
 
 func (h *Handler) HandleSession(c echo.Context) error {
 	req := new(SessionRequest)
-	if err := req.Parse(c); err != nil {
+	if err := c.Bind(req); err != nil {
 		return c.JSON(400, err.Error())
 	}
 
-	session, err := h.store.GetByID(req.SessionID)
+	cookie, err := c.Cookie("session")
+	if err != nil {
+		return c.JSON(400, err.Error())
+	}
+
+	user, err := h.tokenService.ReadAccessToken(cookie.Value)
 	if err != nil {
 		return c.JSON(400, err.Error())
 	}
 
 	code := ksuid.New().String()
-	session.SetAccessCode(code)
-	if err := h.store.Update(session); err != nil {
-		return c.JSON(500, err.Error())
-	}
+	h.store.SetAccessCode(code, user)
 
 	u := h.deepsource.Host.JoinPath("/accounts/runner/apps/saml/login/callback/bifrost/")
 	q := u.Query()
@@ -133,6 +148,7 @@ func (h *Handler) HandleSession(c echo.Context) error {
 	q.Add("code", code)
 	q.Add("state", req.State)
 	u.RawQuery = q.Encode()
+
 	return c.Redirect(http.StatusTemporaryRedirect, u.String())
 }
 
@@ -151,16 +167,60 @@ func (h *Handler) HandleToken(c echo.Context) error {
 		return c.JSON(400, "invalid client_id or client_secret")
 	}
 
-	session, err := h.store.GetByAccessCode(req.Code)
+	user, err := h.store.VerifyAccessCode(req.Code)
 	if err != nil {
-		return c.JSON(500, err.Error())
+		return c.JSON(http.StatusForbidden, err.Error())
 	}
-	session.UnsetAccessCode()
-	session.GenerateRunnerToken(session.BackendToken.Expiry)
 
-	err = h.store.Update(session)
+	accessToken, err := h.tokenService.GetAccessToken(user)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	refreshtoken, err := h.tokenService.GetRefreshToken(user)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, &oauth2.Token{
+		AccessToken:  accessToken,
+		RefreshToken: refreshtoken,
+		Expiry:       time.Now().Add(24 * time.Minute),
+		TokenType:    "Bearer",
+	})
+}
+
+type RefreshRequest struct {
+	AppID        string `param:"app_id"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+func (h *Handler) HandleRefresh(c echo.Context) error {
+	req := &RefreshRequest{}
+	if err := c.Bind(req); err != nil {
+		return c.JSON(400, err.Error())
+	}
+
+	if !(h.runner.IsValidClientID(req.ClientID) || !h.runner.IsValidClientSecret(req.ClientSecret)) {
+		return c.JSON(400, "invalid client_id or client_secret")
+	}
+
+	user, err := h.tokenService.ReadRefreshToken(req.RefreshToken)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, err.Error())
+	}
+
+	accessToken, err := h.tokenService.GetAccessToken(user)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
-	return c.JSON(200, session.RunnerToken)
+
+	return c.JSON(200, &oauth2.Token{
+		AccessToken:  accessToken,
+		RefreshToken: req.RefreshToken,
+		Expiry:       time.Now().Add(15 * time.Minute),
+		TokenType:    "Bearer",
+	})
 }
