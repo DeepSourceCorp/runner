@@ -11,7 +11,7 @@ import (
 func TestDeepSource_UnmarshalYAML(t *testing.T) {
 	input := `
 host: https://deepsource.io
-public_key: |
+publicKey: |
   -----BEGIN PUBLIC KEY-----
   MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq9uoCTPIYLfIuUj02YOC
   KPjoqCCbUIO7YSXg1DASwd9snFwffCDY+sxbXl//z5Lqg/JQhDcW7DkA1QmFKtB/

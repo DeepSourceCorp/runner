@@ -4,16 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/deepsourcecorp/runner/auth/model"
 	"golang.org/x/oauth2"
 )
-
-const ()
 
 type IBackend interface {
 	AuthorizationURL(state string, scopes []string) (string, error)
 	GetToken(ctx context.Context, code string) (*oauth2.Token, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*oauth2.Token, error)
-	GetUser(ctx context.Context, token *oauth2.Token) (*User, error)
+	GetUser(ctx context.Context, token *oauth2.Token) (*model.User, error)
 }
 
 type Factory struct {

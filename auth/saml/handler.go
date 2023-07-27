@@ -5,19 +5,19 @@ import (
 	"net/http"
 
 	"github.com/crewjam/saml/samlsp"
-	"github.com/deepsourcecorp/runner/auth"
+	"github.com/deepsourcecorp/runner/auth/model"
 	"github.com/labstack/echo/v4"
 	"github.com/segmentio/ksuid"
 )
 
 type Handler struct {
-	runner     *auth.Runner
-	deepsource *auth.DeepSource
+	runner     *model.Runner
+	deepsource *model.DeepSource
 	middleware *samlsp.Middleware
 	store      SessionStore
 }
 
-func NewHandler(runner *auth.Runner, deepsource *auth.DeepSource, middleware *samlsp.Middleware, store SessionStore) *Handler {
+func NewHandler(runner *model.Runner, deepsource *model.DeepSource, middleware *samlsp.Middleware, store SessionStore) *Handler {
 	return &Handler{
 		runner:     runner,
 		deepsource: deepsource,

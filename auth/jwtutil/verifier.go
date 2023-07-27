@@ -1,4 +1,4 @@
-package auth
+package jwtutil
 
 import (
 	"crypto/rsa"
@@ -9,15 +9,14 @@ import (
 )
 
 type Verifier struct {
-	VerifierKey *rsa.PublicKey
+	Issuer    string
+	PublicKey *rsa.PublicKey
 }
 
-func NewVerifier(verifierKey *rsa.PublicKey) *Verifier {
-	if verifierKey == nil {
-		panic("failed to initialize verifier: public key is nil")
-	}
+func NewVerifier(issuer string, publicKey *rsa.PublicKey) *Verifier {
 	return &Verifier{
-		VerifierKey: verifierKey,
+		Issuer:    issuer,
+		PublicKey: publicKey,
 	}
 }
 
@@ -31,7 +30,7 @@ func (v *Verifier) Verify(tokenString string) (jwt.MapClaims, error) {
 		}
 
 		// Return the public key
-		return v.VerifierKey, nil
+		return v.PublicKey, nil
 	})
 
 	if err != nil {

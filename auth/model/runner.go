@@ -1,8 +1,12 @@
-package auth
+package model
+
+import "crypto/rsa"
 
 type Runner struct {
+	ID           string
 	ClientID     string
 	ClientSecret string
+	PrivateKey   *rsa.PrivateKey
 }
 
 func (r *Runner) IsValidClientID(clientID string) bool {

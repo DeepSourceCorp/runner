@@ -11,11 +11,11 @@ import (
 func TestRunner_UnmarshalYAML(t *testing.T) {
 	input := `
 id: "runner-id"
-client_id: "client-id"
-client_secret: "client-secret"
-webhook_secret: "webhook-secret"
+clientId: "client-id"
+clientSecret: "client-secret"
+webhookSecret: "webhook-secret"
 host: "https://example.com"
-private_key: |
+privateKey: |
   -----BEGIN PRIVATE KEY-----
   MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCr26gJM8hgt8i5
   SPTZg4Io+OioIJtQg7thJeDUMBLB32ycXB98INj6zFteX//PkuqD8lCENxbsOQDV

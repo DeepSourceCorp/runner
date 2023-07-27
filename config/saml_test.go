@@ -11,7 +11,7 @@ import (
 func TestSAML_UnmarshalYAML(t *testing.T) {
 	input := `
 enabled: true
-metadata_url: https://samltest.id/saml/idp
+metadataUrl: https://samltest.id/saml/idp
 certificate: |
   -----BEGIN CERTIFICATE-----
   MIICvDCCAaQCCQC7HJDoGWaYLDANBgkqhkiG9w0BAQsFADAgMR4wHAYDVQQDDBVt

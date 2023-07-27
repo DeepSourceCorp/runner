@@ -63,7 +63,12 @@ func main() {
 		os.Exit(1)
 	}
 	s := NewServer(c)
-	s.Router().Setup()
+	r, err := s.Router()
+	if err != nil {
+		slog.Error("failed to initialize router", slog.Any("err", err))
+		os.Exit(1)
+	}
+	r.Setup()
 	StartCleanup(context.Background(), c)
 	err = s.Start()
 	if err != nil {

@@ -8,6 +8,10 @@ import (
 	"k8s.io/cli-runtime/pkg/printers"
 )
 
+const (
+	DriverPrinter = "printer"
+)
+
 type K8sPrinterDriver struct{}
 
 func NewK8sPrinterDriver() Driver {

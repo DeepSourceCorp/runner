@@ -62,7 +62,6 @@ func (c *APIProxy) GenerateJWT() (string, error) {
 // using the JWT token.
 func (c *APIProxy) GenerateAccessToken(requestToken string) (string, error) {
 	tokenURL := c.accessTokenURL()
-	slog.Info(fmt.Sprintf("requesting access token from %s with request token %s", tokenURL, requestToken))
 	req, err := http.NewRequest(
 		http.MethodPost,
 		tokenURL,
@@ -124,9 +123,7 @@ func (c *APIProxy) Proxy(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	slog.Debug("generated access token", slog.String("token", accessToken))
 	u := c.ProxyURL(req.URL.Path)
-	slog.Debug("proxying Github api request", slog.String("url", u))
 	req, err = http.NewRequest(req.Method, u, req.Body)
 	if err != nil {
 		return nil, err
