@@ -144,7 +144,9 @@ func (h *Handler) HandleSession(c echo.Context) error {
 	}
 
 	code := ksuid.New().String()
-	h.store.SetAccessCode(code, user)
+	if err := h.store.SetAccessCode(code, user); err != nil {
+		return c.JSON(500, err.Error())
+	}
 
 	u := h.deepsource.Host.JoinPath(fmt.Sprintf("/accounts/runner/apps/%s/login/callback/bifrost/", req.AppID))
 	q := u.Query()

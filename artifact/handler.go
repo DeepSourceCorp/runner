@@ -121,6 +121,6 @@ func (h *Handler) HandleAutofix(c echo.Context) error {
 	return c.JSON(200, autofixArtifactsResponse)
 }
 
-func (h *Handler) HandleOptions(c echo.Context) error {
+func (*Handler) HandleOptions(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }

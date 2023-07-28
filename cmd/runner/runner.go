@@ -59,7 +59,7 @@ func (s *Server) Start() error {
 	return nil
 }
 
-func (s *Server) PrintBanner() {
+func (*Server) PrintBanner() {
 	fmt.Println(fmt.Sprintf(Banner, Version))
 }
 

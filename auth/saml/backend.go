@@ -40,9 +40,3 @@ func NewSAMLMiddleware(ctx context.Context, opts *Opts, client *http.Client) (*s
 
 	return sp, err
 }
-
-func SAMLHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello world"))
-	})
-}

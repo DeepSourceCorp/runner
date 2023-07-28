@@ -10,6 +10,7 @@ import (
 	"github.com/deepsourcecorp/runner/auth/token"
 	"github.com/labstack/echo/v4"
 	"github.com/segmentio/ksuid"
+	"golang.org/x/exp/slog"
 	"golang.org/x/oauth2"
 )
 
@@ -55,7 +56,10 @@ func (h *Handler) AuthorizationHandler() echo.HandlerFunc {
 		request.Parse(r)
 		if !h.runner.IsValidClientID(request.ClientID) {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("invalid client_id"))
+			if _, err := w.Write([]byte("invalid client_id")); err != nil {
+				slog.Error("error writing response", slog.Any("err", err))
+				return
+			}
 			return
 		}
 
@@ -72,7 +76,11 @@ func (h *Handler) AuthorizationHandler() echo.HandlerFunc {
 		session, ok := s.(samlsp.SessionWithAttributes)
 		if !ok {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("unauthorized"))
+			if _, err := w.Write([]byte("unauthorized")); err != nil {
+				slog.Error("error writing response", slog.Any("err", err))
+				return
+			}
+
 			return
 		}
 		attr := session.GetAttributes()
@@ -85,7 +93,10 @@ func (h *Handler) AuthorizationHandler() echo.HandlerFunc {
 		accessToken, err := h.tokenService.GetAccessToken(user)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			if _, err := w.Write([]byte(err.Error())); err != nil {
+				slog.Error("error writing response", slog.Any("err", err))
+				return
+			}
 			return
 		}
 
@@ -101,7 +112,10 @@ func (h *Handler) AuthorizationHandler() echo.HandlerFunc {
 		refreshToken, err := h.tokenService.GetRefreshToken(user)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			if _, err := w.Write([]byte(err.Error())); err != nil {
+				slog.Error("error writing response", slog.Any("err", err))
+				return
+			}
 			return
 		}
 		http.SetCookie(w, &http.Cookie{
@@ -140,7 +154,9 @@ func (h *Handler) HandleSession(c echo.Context) error {
 	}
 
 	code := ksuid.New().String()
-	h.store.SetAccessCode(code, user)
+	if err := h.store.SetAccessCode(code, user); err != nil {
+		return c.JSON(400, err.Error())
+	}
 
 	u := h.deepsource.Host.JoinPath("/accounts/runner/apps/saml/login/callback/bifrost/")
 	q := u.Query()

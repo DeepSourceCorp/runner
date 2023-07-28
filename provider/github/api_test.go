@@ -77,7 +77,7 @@ func TestAPIProxyFactory_NewClient(t *testing.T) {
 }
 
 func TestAPIProxy_GenerateJWT(t *testing.T) {
-	privateKey, _ := rsa.GenerateKey(rand.Reader, 512)
+	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
 	app := &App{ID: "test-app-id", PrivateKey: privateKey}
 	proxy := &APIProxy{app: app}
 	token, err := proxy.GenerateJWT()
@@ -136,7 +136,7 @@ func TestAPIProxy_GenerateAccessToken(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tc.responseStatus)
-				w.Write([]byte(tc.responseBody))
+				_, _ = w.Write([]byte(tc.responseBody))
 			}))
 			defer server.Close()
 
