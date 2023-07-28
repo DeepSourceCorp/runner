@@ -22,11 +22,23 @@ func (k *Kubernetes) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&v); err != nil {
 		return err
 	}
+
+	imageRegistry := ImageRegistry{}
+	err := imageRegistry.ParseFromEnv()
+	if err != nil {
+		return err
+	}
+
 	k.Namespace = v.Namespace
+	k.NodeSelector = v.NodeSelector
+	k.ImageRegistry = &imageRegistry
+	return nil
+}
+
+func (k *Kubernetes) ParseFromEnv() error {
 	if os.Getenv("TASK_NAMESPACE") != "" {
 		k.Namespace = os.Getenv("TASK_NAMESPACE")
 	}
-	k.NodeSelector = v.NodeSelector
 	if os.Getenv("TASK_NODE_SELECTOR") != "" {
 		ns := os.Getenv("TASK_NODE_SELECTOR")
 		k.NodeSelector = make(map[string]string)
@@ -35,6 +47,13 @@ func (k *Kubernetes) UnmarshalYAML(unmarshal func(interface{}) error) error {
 			return err
 		}
 	}
-	k.ImageRegistry = v.ImageRegistry
+
+	imageRegistry := &ImageRegistry{}
+	err := imageRegistry.ParseFromEnv()
+	if err != nil {
+		return err
+	}
+	k.ImageRegistry = imageRegistry
+
 	return nil
 }

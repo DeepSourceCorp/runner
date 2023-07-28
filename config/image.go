@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"net/url"
 	"os"
 )
@@ -10,17 +11,18 @@ type ImageRegistry struct {
 	RegistryUrl    url.URL `yaml:"registryUrl"`
 }
 
-func (i *ImageRegistry) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if os.Getenv("TASK_IMAGE_PULL_SECRET_NAME") != "" {
-		i.PullSecretName = os.Getenv("TASK_IMAGE_PULL_SECRET_NAME")
+func (i *ImageRegistry) ParseFromEnv() error {
+	if os.Getenv("TASK_IMAGE_PULL_SECRET_NAME") == "" || os.Getenv("TASK_IMAGE_REGISTRY_URL") == "" {
+		return errors.New("config: failed to parse image registry from env")
 	}
 
-	if os.Getenv("TASK_IMAGE_REGISTRY_URL") != "" {
-		imageURL, err := url.Parse(os.Getenv("TASK_IMAGE_REGISTRY_URL"))
-		if err != nil {
-			return err
-		}
-		i.RegistryUrl = *imageURL
+	i.PullSecretName = os.Getenv("TASK_IMAGE_PULL_SECRET_NAME")
+
+	imageURL, err := url.Parse(os.Getenv("TASK_IMAGE_REGISTRY_URL"))
+	if err != nil {
+		return err
 	}
+	i.RegistryUrl = *imageURL
+
 	return nil
 }

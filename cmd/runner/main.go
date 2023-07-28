@@ -109,7 +109,7 @@ func main() {
 	}
 	provider.AddRoutes(r)
 
-	orchestrator, err := GetOrchestrator(ctx, c, provider.Adapter)
+	orchestrator, err := GetOrchestrator(ctx, c, provider.Adapter, Driver)
 	if err != nil {
 		slog.Error("failed to initialize orchestrator", slog.Any("err", err))
 		os.Exit(1)

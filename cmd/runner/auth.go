@@ -81,7 +81,7 @@ func createRQLiteStore(c *config.RQLite) (store.Store, error) {
 }
 
 func setupSAMLOptions(c *config.Config) *saml.Opts {
-	if c.SAML != nil && !c.SAML.Enabled {
+	if c.SAML != nil && c.SAML.Enabled {
 		return &saml.Opts{
 			Certificate: c.SAML.Certificate,
 			MetadataURL: c.SAML.MetadataURL,

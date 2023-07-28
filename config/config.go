@@ -1,9 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"io"
 
-	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v2"
 )
 
@@ -20,8 +20,21 @@ type Config struct {
 func LoadConfig(r io.Reader) (*Config, error) {
 	c := new(Config)
 	if err := yaml.NewDecoder(r).Decode(c); err != nil {
-		slog.Error("failed to unmarshal config file", slog.Any("err", err))
-		return nil, err
+		return nil, fmt.Errorf("config: failed to load config: %w", err)
 	}
+	if c.Kubernetes == nil {
+		c.Kubernetes = &Kubernetes{}
+		if err := c.Kubernetes.ParseFromEnv(); err != nil {
+			return nil, err
+		}
+	}
+
+	if c.RQLite == nil {
+		c.RQLite = &RQLite{}
+		if err := c.RQLite.ParseFromEnv(); err != nil {
+			return nil, fmt.Errorf("config: failed to load config: %w", err)
+		}
+	}
+
 	return c, nil
 }

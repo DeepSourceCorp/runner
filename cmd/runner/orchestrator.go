@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -14,13 +15,17 @@ var (
 	CleanerInterval = 30 * time.Minute
 )
 
-func GetOrchestrator(ctx context.Context, c *config.Config, provider orchestrator.Provider) (*orchestrator.Facade, error) {
-	driver, err := createDriver("")
+func GetOrchestrator(ctx context.Context, c *config.Config, provider orchestrator.Provider, driverType string) (*orchestrator.Facade, error) {
+	driver, err := createDriver(driverType)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing orchestrator: %w", err)
 	}
 
 	signer := jwtutil.NewSigner(c.Runner.ID, c.Runner.PrivateKey)
+
+	if c.Kubernetes == nil {
+		return nil, errors.New("error initializing orchestrator: kubernetes config is empty")
+	}
 
 	kubernetesOpts := &orchestrator.KubernetesOpts{
 		Namespace:        c.Kubernetes.Namespace,

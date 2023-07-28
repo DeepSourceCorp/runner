@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"strconv"
 )
@@ -10,28 +12,17 @@ type RQLite struct {
 	Port int    `yaml:"port"`
 }
 
-func (r *RQLite) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	type T struct {
-		Host string `yaml:"host"`
-		Port int    `yaml:"port"`
+func (r *RQLite) ParseFromEnv() error {
+	if os.Getenv("RQLITE_HOST") == "" || os.Getenv("RQLITE_PORT") == "" {
+		return errors.New("config: failed to parse rqlite from env")
 	}
-	var v T
-	if err := unmarshal(&v); err != nil {
-		return err
+
+	r.Host = os.Getenv("RQLITE_HOST")
+	port, err := strconv.Atoi(os.Getenv("RQLITE_PORT"))
+	if err != nil {
+		return fmt.Errorf("config: failed to parse rqlite port from env: %v", err)
 	}
-	if os.Getenv("RQLITE_HOST") != "" {
-		r.Host = os.Getenv("RQLITE_HOST")
-	} else {
-		r.Host = v.Host
-	}
-	if os.Getenv("RQLITE_PORT") != "" {
-		p, err := strconv.Atoi(os.Getenv("RQLITE_PORT"))
-		if err != nil {
-			return err
-		}
-		r.Port = p
-	} else {
-		r.Port = v.Port
-	}
+	r.Port = port
+
 	return nil
 }
