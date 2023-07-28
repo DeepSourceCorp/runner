@@ -91,9 +91,12 @@ func (s *Server) Router() (*Router, error) {
 		return nil, fmt.Errorf("router failed to initialize: %w", err)
 	}
 
-	saml, err := SAMLHandler(s.Config)
-	if err != nil {
-		return nil, fmt.Errorf("router failed to initialize: %w", err)
+	var saml *saml.Handler = nil
+	if s.Config.SAML != nil && s.Config.SAML.Enabled {
+		saml, err = SAMLHandler(s.Config)
+		if err != nil {
+			return nil, fmt.Errorf("router failed to initialize: %w", err)
+		}
 	}
 
 	corsMiddleware := artifact.CORSMiddleware(s.Config.DeepSource.Host.String())
@@ -113,13 +116,6 @@ func (s *Server) Router() (*Router, error) {
 			{Method: "POST", Path: "/apps/:app_id/auth/refresh", HandlerFunc: auth.OAuthHandlers.HandleRefresh},
 			{Method: "GET", Path: "/apps/:app_id/auth/user", HandlerFunc: auth.OAuthHandlers.HandleUser},
 
-			// SAML routes.
-			{Method: "*", Path: "/saml/*", HandlerFunc: saml.SAMLHandler()},
-			{Method: http.MethodGet, Path: "/apps/saml/auth/authorize", HandlerFunc: saml.AuthorizationHandler()},
-			{Method: http.MethodGet, Path: "/apps/saml/auth/session", HandlerFunc: saml.HandleSession},
-			{Method: http.MethodPost, Path: "/apps/saml/auth/token", HandlerFunc: saml.HandleToken},
-			{Method: http.MethodPost, Path: "/apps/saml/auth/refresh", HandlerFunc: saml.HandleRefresh},
-
 			// Orchestrator routes.
 			{Method: http.MethodPost, Path: "apps/:app_id/tasks/analysis", HandlerFunc: orchestrator.HandleAnalysis, Middleware: []echo.MiddlewareFunc{auth.TokenMiddleware}},
 			{Method: http.MethodPost, Path: "apps/:app_id/tasks/autofix", HandlerFunc: orchestrator.HandleAutofix, Middleware: []echo.MiddlewareFunc{auth.TokenMiddleware}},
@@ -137,6 +133,15 @@ func (s *Server) Router() (*Router, error) {
 			{Method: http.MethodPost, Path: "apps/:app_id/artifacts/analysis", HandlerFunc: artifacts.HandleAnalysis, Middleware: []echo.MiddlewareFunc{corsMiddleware, auth.SessionMiddleware}},
 			{Method: http.MethodPost, Path: "apps/:app_id/artifacts/autofix", HandlerFunc: artifacts.HandleAutofix, Middleware: []echo.MiddlewareFunc{corsMiddleware, auth.SessionMiddleware}},
 		},
+	}
+
+	if saml != nil {
+		// SAML routes.
+		router.Routes = append(router.Routes, Route{Method: "*", Path: "/saml/*", HandlerFunc: saml.SAMLHandler()})
+		router.Routes = append(router.Routes, Route{Method: http.MethodGet, Path: "/apps/saml/auth/authorize", HandlerFunc: saml.AuthorizationHandler()})
+		router.Routes = append(router.Routes, Route{Method: http.MethodGet, Path: "/apps/saml/auth/session", HandlerFunc: saml.HandleSession})
+		router.Routes = append(router.Routes, Route{Method: http.MethodPost, Path: "/apps/saml/auth/token", HandlerFunc: saml.HandleToken})
+		router.Routes = append(router.Routes, Route{Method: http.MethodPost, Path: "/apps/saml/auth/refresh", HandlerFunc: saml.HandleRefresh})
 	}
 	return router, nil
 }
