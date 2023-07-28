@@ -12,6 +12,7 @@ const (
 )
 
 type AutofixTask struct {
+	runner   *Runner
 	opts     *TaskOpts
 	driver   Driver
 	provider Provider
@@ -24,12 +25,13 @@ type AutofixRunRequest struct {
 	InstallationID string
 }
 
-func NewAutofixTask(opts *TaskOpts, driver Driver, provider Provider, signer Signer) *AutofixTask {
+func NewAutofixTask(runner *Runner, opts *TaskOpts, driver Driver, provider Provider, signer Signer) *AutofixTask {
 	return &AutofixTask{
 		opts:     opts,
 		driver:   driver,
 		signer:   signer,
 		provider: provider,
+		runner:   runner,
 	}
 }
 
@@ -39,7 +41,7 @@ func (t *AutofixTask) Run(ctx context.Context, req *AutofixRunRequest) error {
 		return err
 	}
 
-	token, err := t.signer.GenerateToken("", []string{ScopeAutofix}, nil, 30*time.Minute)
+	token, err := t.signer.GenerateToken(t.runner.ID, []string{ScopeAutofix}, nil, 30*time.Minute)
 	if err != nil {
 		return err
 	}

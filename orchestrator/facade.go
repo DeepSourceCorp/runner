@@ -21,6 +21,7 @@ type Opts struct {
 	Provider
 	Signer
 	Driver
+	*Runner
 }
 
 type Facade struct {
@@ -33,7 +34,7 @@ func New(opts *Opts) (*Facade, error) {
 		return nil, ErrMissingOpts
 	}
 	cleaner := NewCleaner(opts.Driver, opts.CleanerOpts)
-	handler := NewHandler(opts.TaskOpts, opts.Driver, opts.Provider, opts.Signer)
+	handler := NewHandler(opts.TaskOpts, opts.Driver, opts.Provider, opts.Signer, opts.Runner)
 
 	return &Facade{
 		Cleaner:             cleaner,

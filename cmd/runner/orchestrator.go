@@ -46,12 +46,17 @@ func GetOrchestrator(ctx context.Context, c *config.Config, provider orchestrato
 		Interval:  &CleanerInterval,
 	}
 
+	runner := &orchestrator.Runner{
+		ID: c.Runner.ID,
+	}
+
 	opts := &orchestrator.Opts{
 		TaskOpts:    taskOpts,
 		CleanerOpts: cleanerOpts,
 		Driver:      driver,
 		Provider:    provider,
 		Signer:      signer,
+		Runner:      runner,
 	}
 
 	return orchestrator.New(opts)
