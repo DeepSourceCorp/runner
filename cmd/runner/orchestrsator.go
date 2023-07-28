@@ -1,50 +1,62 @@
 package main
 
 import (
-	"net/http"
+	"context"
+	"fmt"
+	"time"
 
 	"github.com/deepsourcecorp/runner/auth/jwtutil"
 	"github.com/deepsourcecorp/runner/config"
 	"github.com/deepsourcecorp/runner/orchestrator"
-	"github.com/deepsourcecorp/runner/provider/facade"
-	"github.com/deepsourcecorp/runner/provider/github"
 )
 
-func initializeOrchestrator(c *config.Config, client *http.Client) (*orchestrator.Handler, error) {
-	apps := make(map[string]*github.App)
-	for _, v := range c.Apps {
-		switch {
-		case v.Provider == "github":
-			apps[v.ID] = &github.App{
-				ID:            v.ID,
-				AppID:         v.Github.AppID,
-				WebhookSecret: v.Github.WebhookSecret,
-				BaseHost:      v.Github.Host,
-				APIHost:       v.Github.APIHost,
-				AppSlug:       v.Github.Slug,
-				PrivateKey:    v.Github.PrivateKey,
-			}
-		}
-	}
-	factory := github.NewAPIProxyFactory(apps, client)
-	provider := facade.NewProviderFacade(factory)
+var (
+	CleanerInterval = 30 * time.Minute
+)
 
-	driver, err := orchestrator.GetDriver(Driver)
+func GetOrchestrator(ctx context.Context, c *config.Config, provider orchestrator.Provider) (*orchestrator.Facade, error) {
+	driver, err := createDriver("")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error initializing orchestrator: %w", err)
 	}
 
-	opts := &orchestrator.TaskOpts{
+	signer := jwtutil.NewSigner(c.Runner.ID, c.Runner.PrivateKey)
+
+	kubernetesOpts := &orchestrator.KubernetesOpts{
+		Namespace:        c.Kubernetes.Namespace,
+		NodeSelector:     c.Kubernetes.NodeSelector,
+		ImageURL:         c.Kubernetes.ImageRegistry.RegistryUrl,
+		ImagePullSecrets: []string{c.Kubernetes.ImageRegistry.PullSecretName},
+	}
+
+	taskOpts := &orchestrator.TaskOpts{
 		RemoteHost:           c.DeepSource.Host.String(),
 		SnippetStorageType:   c.ObjectStorage.Backend,
 		SnippetStorageBucket: c.ObjectStorage.Bucket,
-		KubernetesOpts: &orchestrator.KubernetesOpts{
-			Namespace:        c.Kubernetes.Namespace,
-			NodeSelector:     c.Kubernetes.NodeSelector,
-			ImageURL:         c.Kubernetes.ImageRegistry.RegistryUrl,
-			ImagePullSecrets: []string{c.Kubernetes.ImageRegistry.PullSecretName},
-		},
+		KubernetesOpts:       kubernetesOpts,
 	}
-	signer := jwtutil.NewSigner(c.Runner.ID, c.Runner.PrivateKey)
-	return orchestrator.NewHandler(opts, driver, provider, signer), nil
+
+	cleanerOpts := &orchestrator.CleanerOpts{
+		Namespace: c.Kubernetes.Namespace,
+		Interval:  &CleanerInterval,
+	}
+
+	opts := &orchestrator.Opts{
+		TaskOpts:    taskOpts,
+		CleanerOpts: cleanerOpts,
+		Driver:      driver,
+		Provider:    provider,
+		Signer:      signer,
+	}
+
+	return orchestrator.New(opts)
+}
+
+func createDriver(driver string) (orchestrator.Driver, error) {
+	switch driver {
+	case orchestrator.DriverPrinter:
+		return orchestrator.NewK8sPrinterDriver(), nil
+	default:
+		return orchestrator.NewK8sDriver("")
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -152,4 +153,27 @@ func (h *Handler) HandleInstallation(c echo.Context) error {
 
 	installationURL := client.InstallationURL()
 	return c.Redirect(http.StatusTemporaryRedirect, installationURL)
+}
+
+func (h *Handler) AuthenticatedRemoteURL(appID, installationID string, srcURL string) (string, error) {
+	proxy, err := h.apiProxyFactory.NewProxy(appID, installationID)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate authenticated remote url: %w", err)
+	}
+	jwt, err := proxy.GenerateJWT()
+	if err != nil {
+		return "", fmt.Errorf("failed to generate authenticated remote url: %w", err)
+	}
+
+	token, err := proxy.GenerateAccessToken(jwt)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate authenticated remote url: %w", err)
+	}
+
+	u, err := url.Parse(srcURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse url: %w", err)
+	}
+	u.User = url.UserPassword("x-access-token", token)
+	return u.String(), nil
 }

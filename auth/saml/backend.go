@@ -12,13 +12,13 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type SAMLOpts struct {
+type Opts struct {
 	Certificate *tls.Certificate
 	MetadataURL url.URL
 	RootURL     url.URL
 }
 
-func NewSAMLMiddleware(ctx context.Context, opts *SAMLOpts, client *http.Client) (*samlsp.Middleware, error) {
+func NewSAMLMiddleware(ctx context.Context, opts *Opts, client *http.Client) (*samlsp.Middleware, error) {
 	idpMetadata, err := samlsp.FetchMetadata(ctx, client, opts.MetadataURL)
 	if err != nil {
 		return nil, err

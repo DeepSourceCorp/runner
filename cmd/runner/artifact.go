@@ -9,10 +9,17 @@ import (
 	"github.com/deepsourcelabs/artifacts/storage"
 )
 
-func initializeArtifact(c *config.Config) (*artifact.Handler, error) {
-	storage, err := storage.NewGoogleCloudStorageClient(context.Background(), []byte(c.ObjectStorage.Credential))
+func GetArtifacts(ctx context.Context, c *config.Config) (*artifact.Facade, error) {
+	storage, err := storage.NewGoogleCloudStorageClient(ctx, []byte(c.ObjectStorage.Credential))
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize artifacts: %w", err)
 	}
-	return artifact.NewHandler(storage, c.ObjectStorage.Bucket), nil
+
+	opts := &artifact.Opts{
+		Storage:       storage,
+		Bucket:        c.ObjectStorage.Bucket,
+		AllowedOrigin: c.DeepSource.Host.String(),
+	}
+
+	return artifact.New(ctx, opts)
 }
