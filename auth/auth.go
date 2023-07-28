@@ -79,6 +79,7 @@ func New(ctx context.Context, opts *Opts, client *http.Client) (*Facade, error) 
 
 func (f *Facade) AddRoutes(r Router) Router {
 	r.AddRoute(http.MethodPost, "/refresh", f.TokenHandlers.HandleRefresh)
+	r.AddRoute(http.MethodPost, "/logout", f.TokenHandlers.HandleLogout)
 
 	r.AddRoute(http.MethodGet, "/apps/:app_id/auth/authorize", f.OAuthHandlers.HandleAuthorize)
 	r.AddRoute(http.MethodGet, "/apps/:app_id/auth/callback", f.OAuthHandlers.HandleCallback)

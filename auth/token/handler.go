@@ -46,3 +46,25 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 
 	return c.Redirect(http.StatusTemporaryRedirect, referrer)
 }
+
+func (h *Handler) HandleLogout(c echo.Context) error {
+	c.SetCookie(&http.Cookie{
+		Name:     "session",
+		Value:    "",
+		Path:     "/",
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
+		HttpOnly: true,
+	})
+
+	c.SetCookie(&http.Cookie{
+		Name:     "refresh",
+		Value:    "",
+		Path:     "/refresh",
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
+		HttpOnly: true,
+	})
+
+	return c.NoContent(http.StatusOK)
+}
