@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/deepsourcecorp/runner/auth/model"
 	"golang.org/x/exp/slog"
 	"golang.org/x/oauth2"
 )
@@ -132,7 +133,7 @@ func (g *Github) RefreshToken(_ context.Context, refreshToken string) (*oauth2.T
 	}, nil
 }
 
-func (g *Github) GetUser(ctx context.Context, token *oauth2.Token) (*User, error) {
+func (g *Github) GetUser(ctx context.Context, token *oauth2.Token) (*model.User, error) {
 	userURL := g.apiHost.JoinPath(GithubURLUser)
 	req, err := http.NewRequest("GET", userURL.String(), http.NoBody)
 	if err != nil {
@@ -176,7 +177,7 @@ func (g *Github) GetUser(ctx context.Context, token *oauth2.Token) (*User, error
 		u.Email = email
 	}
 
-	return &User{
+	return &model.User{
 		ID:    strconv.Itoa(u.ID),
 		Email: u.Email,
 		Login: u.Login,

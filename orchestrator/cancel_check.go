@@ -16,6 +16,7 @@ const (
 )
 
 type CancelCheckTask struct {
+	runner *Runner
 	opts   *TaskOpts
 	driver Driver
 	signer Signer
@@ -24,12 +25,13 @@ type CancelCheckTask struct {
 
 // NewCancelCheckTask registers a new cancel check task with the supplied properties of
 // driver, provider facade and license store.
-func NewCancelCheckTask(opts *TaskOpts, driver Driver, signer Signer, client *http.Client) *CancelCheckTask {
+func NewCancelCheckTask(runner *Runner, opts *TaskOpts, driver Driver, signer Signer, client *http.Client) *CancelCheckTask {
 	t := &CancelCheckTask{
 		opts:   opts,
 		driver: driver,
 		signer: signer,
 		client: client,
+		runner: runner,
 	}
 	if t.client == nil {
 		t.client = http.DefaultClient
@@ -76,7 +78,7 @@ func (t *CancelCheckTask) Run(ctx context.Context, run *artifact.CancelCheckRun)
 	}
 
 	publisherURL := t.opts.RemoteHost + cancelCheckPublishPath
-	publisherToken, err := t.signer.GenerateToken([]string{ScopeAnalysis}, 30*time.Minute)
+	publisherToken, err := t.signer.GenerateToken(t.runner.ID, []string{ScopeAnalysis}, nil, 30*time.Minute)
 	if err != nil {
 		return err
 	}

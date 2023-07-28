@@ -15,18 +15,20 @@ const (
 )
 
 type AnalysisTask struct {
+	runner   *Runner
 	driver   Driver
 	provider Provider
 	signer   Signer
 	opts     *TaskOpts
 }
 
-func NewAnalysisTask(opts *TaskOpts, driver Driver, provider Provider, signer Signer) *AnalysisTask {
+func NewAnalysisTask(runner *Runner, opts *TaskOpts, driver Driver, provider Provider, signer Signer) *AnalysisTask {
 	return &AnalysisTask{
 		opts:     opts,
 		driver:   driver,
 		signer:   signer, // used for generating the auth token.
 		provider: provider,
+		runner:   runner,
 	}
 }
 
@@ -66,7 +68,7 @@ func (t *AnalysisTask) Run(ctx context.Context, req *AnalysisRunRequest) error {
 	for _, check := range req.Run.Checks {
 		slog.Info("creating analysis job for check", check.CheckSeq)
 
-		token, err := t.signer.GenerateToken([]string{ScopeAnalysis}, 30*time.Minute)
+		token, err := t.signer.GenerateToken(t.runner.ID, []string{ScopeAnalysis}, nil, 30*time.Minute)
 		if err != nil {
 			slog.Error("failed to generate token for analysis job, err= %v", err)
 			return err

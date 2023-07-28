@@ -4,6 +4,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type Route struct {
+	Method      string
+	Path        string
+	HandlerFunc echo.HandlerFunc
+	Middleware  []echo.MiddlewareFunc
+}
+
 type Router struct {
 	Routes []Route
 	e      *echo.Echo
@@ -24,9 +31,11 @@ func (r *Router) Setup() {
 	}
 }
 
-type Route struct {
-	Method      string
-	Path        string
-	HandlerFunc echo.HandlerFunc
-	Middleware  []echo.MiddlewareFunc
+func (r *Router) AddRoute(method string, path string, handlerFunc echo.HandlerFunc, middleware ...echo.MiddlewareFunc) {
+	r.Routes = append(r.Routes, Route{
+		Method:      method,
+		Path:        path,
+		HandlerFunc: handlerFunc,
+		Middleware:  middleware,
+	})
 }

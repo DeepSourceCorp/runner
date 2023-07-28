@@ -13,6 +13,7 @@ const (
 
 // PatcherTask represents the patcher job task structure.
 type PatcherTask struct {
+	runner   *Runner
 	driver   Driver
 	provider Provider
 	signer   Signer
@@ -28,12 +29,13 @@ type PatcherRunRequest struct {
 }
 
 // NewPatcherTask creates a new patching job task based on PatcherTask structure and returns it.
-func NewPatcherTask(opts *TaskOpts, driver Driver, provider Provider, signer Signer) *PatcherTask {
+func NewPatcherTask(runner *Runner, opts *TaskOpts, driver Driver, provider Provider, signer Signer) *PatcherTask {
 	return &PatcherTask{
 		driver:   driver,
 		provider: provider,
 		signer:   signer,
 		opts:     opts,
+		runner:   runner,
 	}
 }
 
@@ -45,7 +47,7 @@ func (p *PatcherTask) Run(ctx context.Context, req *PatcherRunRequest) error {
 		return err
 	}
 
-	token, err := p.signer.GenerateToken([]string{ScopeAutofix}, 30*time.Minute)
+	token, err := p.signer.GenerateToken(p.runner.ID, []string{ScopeAutofix}, nil, 30*time.Minute)
 	if err != nil {
 		return err
 	}

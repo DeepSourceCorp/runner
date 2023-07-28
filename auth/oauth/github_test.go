@@ -35,7 +35,7 @@ func TestGithub_GetToken(t *testing.T) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"access_token":"token","token_type":"bearer","scope":"repo,gist"}`))
+		_, _ = w.Write([]byte(`{"access_token":"token","token_type":"bearer","scope":"repo,gist"}`))
 	}))
 	defer server.Close()
 	serverURL, _ := url.Parse(server.URL)

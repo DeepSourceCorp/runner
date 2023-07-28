@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+const (
+	DriverTypePrinter = "printer"
+	DriverTypeK8s     = "k8s"
+)
+
 var ErrUnknownStorageProvider = errors.New("unknown storage provider")
 
 type Storer interface {
@@ -13,7 +18,7 @@ type Storer interface {
 }
 
 type Signer interface {
-	GenerateToken(scope []string, expiry time.Duration) (string, error)
+	GenerateToken(issuer string, scope []string, claims map[string]interface{}, expiry time.Duration) (string, error)
 }
 
 type KubernetesOpts struct {

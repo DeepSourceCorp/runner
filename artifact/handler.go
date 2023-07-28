@@ -3,26 +3,18 @@ package artifact
 import (
 	"fmt"
 	"io"
+	"net/http"
 
-	"github.com/deepsourcelabs/artifacts/storage"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slog"
 )
 
 type Handler struct {
-	storage *storage.GoogleCloudStorageClient
+	storage StorageClient
 	bucket  string
 }
 
-func NewHandler(storage *storage.GoogleCloudStorageClient, bucket string) *Handler {
-	if storage == nil {
-		slog.Error("failed to initialize artifacts handler, storage client is nil")
-		return nil
-	}
-	if bucket == "" {
-		slog.Error("failed to initialize artifacts handler, bucket is empty")
-		return nil
-	}
+func NewHandler(storage StorageClient, bucket string) *Handler {
 	return &Handler{
 		storage: storage,
 		bucket:  bucket,
@@ -127,4 +119,8 @@ func (h *Handler) HandleAutofix(c echo.Context) error {
 		}
 	}
 	return c.JSON(200, autofixArtifactsResponse)
+}
+
+func (*Handler) HandleOptions(c echo.Context) error {
+	return c.NoContent(http.StatusOK)
 }

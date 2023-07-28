@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/deepsourcecorp/runner/internal/signer"
+	"github.com/deepsourcecorp/runner/provider/model"
 	"golang.org/x/exp/slog"
 )
 
@@ -26,12 +27,12 @@ var (
 
 type WebhookProxyFactory struct {
 	apps       map[string]*App
-	deepsource *DeepSource
-	runner     *Runner
+	deepsource *model.DeepSource
+	runner     *model.Runner
 	client     *http.Client
 }
 
-func NewWebhookProxyFactory(runner *Runner, deepsource *DeepSource, apps map[string]*App, client *http.Client) *WebhookProxyFactory {
+func NewWebhookProxyFactory(runner *model.Runner, deepsource *model.DeepSource, apps map[string]*App, client *http.Client) *WebhookProxyFactory {
 	return &WebhookProxyFactory{
 		runner:     runner,
 		deepsource: deepsource,
@@ -50,12 +51,12 @@ func (g *WebhookProxyFactory) New(appID string) (*WebhookProxy, error) {
 
 type WebhookProxy struct {
 	app        *App
-	runner     *Runner
-	deepsource *DeepSource
+	runner     *model.Runner
+	deepsource *model.DeepSource
 	client     *http.Client
 }
 
-func NewWebhookProxy(app *App, runner *Runner, deepsource *DeepSource, client *http.Client) (*WebhookProxy, error) {
+func NewWebhookProxy(app *App, runner *model.Runner, deepsource *model.DeepSource, client *http.Client) (*WebhookProxy, error) {
 	return &WebhookProxy{
 		app:        app,
 		runner:     runner,

@@ -22,14 +22,15 @@ func NewHandler(
 	driver Driver,
 	provider Provider,
 	signer Signer,
+	runner *Runner,
 ) *Handler {
 	slog.Info("initializing orchestrator handler", slog.Any("opts", opts))
 	return &Handler{
-		analysisTask:    NewAnalysisTask(opts, driver, provider, signer),
-		autofixTask:     NewAutofixTask(opts, driver, provider, signer),
-		transformerTask: NewTransformerTask(opts, driver, provider, signer),
-		cancelCheckTask: NewCancelCheckTask(opts, driver, signer, nil),
-		patcherTask:     NewPatcherTask(opts, driver, provider, signer),
+		analysisTask:    NewAnalysisTask(runner, opts, driver, provider, signer),
+		autofixTask:     NewAutofixTask(runner, opts, driver, provider, signer),
+		transformerTask: NewTransformerTask(runner, opts, driver, provider, signer),
+		cancelCheckTask: NewCancelCheckTask(runner, opts, driver, signer, nil),
+		patcherTask:     NewPatcherTask(runner, opts, driver, provider, signer),
 	}
 }
 

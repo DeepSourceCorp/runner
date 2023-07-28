@@ -11,7 +11,7 @@ import (
 func TestKubernetes_UnmarshalYAML(t *testing.T) {
 	input := `
 namespace: default
-node_selector:
+nodeSelector:
   foo: bar`
 	var k Kubernetes
 	err := yaml.Unmarshal([]byte(input), &k)

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/rqlite/gorqlite"
+	"golang.org/x/exp/slog"
 )
 
 type Migration struct {
@@ -48,6 +49,7 @@ func (m *Migrator) Migrate() error {
 		if appliedSet[migration.Name] {
 			continue
 		}
+		slog.Info("applying migration", slog.Any("name", migration.Name))
 
 		_, err := m.db.WriteOne(migration.Up)
 		if err != nil {

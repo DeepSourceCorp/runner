@@ -10,14 +10,14 @@ import (
 
 func TestGithub_UnmarshalYAML(t *testing.T) {
 	input := `
-app_id: "app-id"
-client_id: "client-id"
-client_secret: "client-secret"
-webhook_secret: "webhook-secret"
+appId: "app-id"
+clientId: "client-id"
+clientSecret: "client-secret"
+webhookSecret: "webhook-secret"
 host: "https://github.com"
-api_host: "https://api.github.com"
+apiHost: "https://api.github.com"
 slug: "slug-1"
-private_key: |
+privateKey: |
   -----BEGIN RSA PRIVATE KEY-----
   MIIEpQIBAAKCAQEA6BzjvvccBOWR6iCaNrLG2GRSpEoZo12sIwm1EWgIk6m6feFP
   nIwqDVT50gpdINSCiLGdisSa5UO5S6PnJ+1kwn1TVBwIngiAGFFO6dUW4COmmVKu

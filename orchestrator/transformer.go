@@ -12,6 +12,7 @@ const (
 )
 
 type TransformerTask struct {
+	runner   *Runner
 	opts     *TaskOpts
 	driver   Driver
 	provider Provider
@@ -24,12 +25,13 @@ type TransformerRunRequest struct {
 	InstallationID string
 }
 
-func NewTransformerTask(opts *TaskOpts, driver Driver, provider Provider, signer Signer) *TransformerTask {
+func NewTransformerTask(runner *Runner, opts *TaskOpts, driver Driver, provider Provider, signer Signer) *TransformerTask {
 	return &TransformerTask{
 		opts:     opts,
 		driver:   driver,
 		provider: provider,
 		signer:   signer,
+		runner:   runner,
 	}
 }
 
@@ -39,7 +41,7 @@ func (t *TransformerTask) Run(ctx context.Context, req *TransformerRunRequest) e
 		return err
 	}
 
-	token, err := t.signer.GenerateToken([]string{ScopeTransform}, 30*time.Minute)
+	token, err := t.signer.GenerateToken(t.runner.ID, []string{ScopeTransform}, nil, 30*time.Minute)
 	if err != nil {
 		return err
 	}
