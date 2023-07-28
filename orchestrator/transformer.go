@@ -39,7 +39,7 @@ func (t *TransformerTask) Run(ctx context.Context, req *TransformerRunRequest) e
 		return err
 	}
 
-	token, err := t.signer.GenerateToken([]string{ScopeTransform}, nil, 30*time.Minute)
+	token, err := t.signer.GenerateToken("", []string{ScopeTransform}, nil, 30*time.Minute)
 	if err != nil {
 		return err
 	}

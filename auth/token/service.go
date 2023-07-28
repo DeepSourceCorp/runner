@@ -1,7 +1,6 @@
 package token
 
 import (
-	"crypto/rsa"
 	"errors"
 
 	"time"
@@ -11,6 +10,7 @@ import (
 )
 
 const (
+	ScopeUser     = "user"
 	ScopeCodeRead = "code:read"
 	ScopeRefresh  = "refresh"
 )
@@ -24,24 +24,22 @@ type Service struct {
 	verifier *jwtutil.Verifier
 }
 
-func NewService(runnerID string, privateKey *rsa.PrivateKey) *Service {
+func NewService(signer *jwtutil.Signer, verifier *jwtutil.Verifier) *Service {
 	return &Service{
-		signer:   jwtutil.NewSigner(runnerID, privateKey),
-		verifier: jwtutil.NewVerifier(runnerID, &privateKey.PublicKey),
+		signer:   signer,
+		verifier: verifier,
 	}
 }
 
-func (s *Service) GetAccessToken(user *model.User) (string, error) {
-	claims := user.ToMap()
-	return s.signer.GenerateToken([]string{ScopeCodeRead}, claims, ExpiryAccessToken)
+func (s *Service) GenerateAccessToken(issuer string, user *model.User) (string, error) {
+	return s.signer.GenerateToken(issuer, []string{ScopeUser}, user.Claims(), ExpiryAccessToken)
 }
 
-func (s *Service) GetRefreshToken(user *model.User) (string, error) {
-	claims := user.ToMap()
-	return s.signer.GenerateToken([]string{ScopeRefresh}, claims, ExpiryAccessToken)
+func (s *Service) GenerateRefreshToken(issuer string, user *model.User) (string, error) {
+	return s.signer.GenerateToken(issuer, []string{ScopeRefresh}, user.Claims(), ExpiryAccessToken)
 }
 
-func (s *Service) ReadAccessToken(token string) (*model.User, error) {
+func (s *Service) ReadAccessToken(issuer string, token string) (*model.User, error) {
 	claims, err := s.verifier.Verify(token)
 	if err != nil {
 		return nil, err
@@ -52,7 +50,7 @@ func (s *Service) ReadAccessToken(token string) (*model.User, error) {
 		}
 	}
 
-	if claims["iss"] != s.signer.Issuer {
+	if claims["iss"] != issuer {
 		return nil, errors.New("invalid issuer")
 	}
 
@@ -69,7 +67,7 @@ func (s *Service) ReadAccessToken(token string) (*model.User, error) {
 	}, nil
 }
 
-func (s *Service) ReadRefreshToken(token string) (*model.User, error) {
+func (s *Service) ReadRefreshToken(issuer string, token string) (*model.User, error) {
 	claims, err := s.verifier.Verify(token)
 	if err != nil {
 		return nil, err
@@ -79,7 +77,7 @@ func (s *Service) ReadRefreshToken(token string) (*model.User, error) {
 			return nil, errors.New("invalid claims")
 		}
 	}
-	if claims["iss"] != s.signer.Issuer {
+	if claims["iss"] != issuer {
 		return nil, errors.New("invalid issuer")
 	}
 	if claims["scp"] != ScopeRefresh {

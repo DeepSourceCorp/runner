@@ -3,14 +3,16 @@ package token
 import (
 	"net/http"
 
+	"github.com/deepsourcecorp/runner/auth/model"
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
 	service *Service
+	runner  *model.Runner
 }
 
-func NewHandler(service *Service) *Handler {
+func NewHandler(runner *model.Runner, service *Service) *Handler {
 	return &Handler{
 		service: service,
 	}
@@ -26,12 +28,12 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, "invalid refresh token")
 	}
 
-	user, err := h.service.ReadRefreshToken(cookie.Value)
+	user, err := h.service.ReadRefreshToken(h.runner.ID, cookie.Value)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, err.Error())
 	}
 
-	accessToken, err := h.service.GetAccessToken(user)
+	accessToken, err := h.service.GenerateAccessToken(h.runner.ID, user)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}

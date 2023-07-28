@@ -9,19 +9,16 @@ import (
 )
 
 type Verifier struct {
-	Issuer    string
 	PublicKey *rsa.PublicKey
 }
 
-func NewVerifier(issuer string, publicKey *rsa.PublicKey) *Verifier {
+func NewVerifier(publicKey *rsa.PublicKey) *Verifier {
 	return &Verifier{
-		Issuer:    issuer,
 		PublicKey: publicKey,
 	}
 }
 
 func (v *Verifier) Verify(tokenString string) (jwt.MapClaims, error) {
-
 	// Parse the token string
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Check the signing method

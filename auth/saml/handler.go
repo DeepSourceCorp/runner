@@ -22,8 +22,7 @@ type Handler struct {
 	store        store.Store
 }
 
-func NewHandler(runner *model.Runner, deepsource *model.DeepSource, middleware *samlsp.Middleware, store store.Store) *Handler {
-	tokenService := token.NewService(runner.ID, runner.PrivateKey)
+func NewHandler(runner *model.Runner, deepsource *model.DeepSource, middleware *samlsp.Middleware, tokenService *token.Service, store store.Store) *Handler {
 	return &Handler{
 		runner:       runner,
 		deepsource:   deepsource,
@@ -90,7 +89,7 @@ func (h *Handler) AuthorizationHandler() echo.HandlerFunc {
 			Email: attr.Get("email"),
 			Name:  attr.Get("first_name") + " " + attr.Get("last_name"),
 		}
-		accessToken, err := h.tokenService.GetAccessToken(user)
+		accessToken, err := h.tokenService.GenerateAccessToken(h.runner.ID, user)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			if _, err := w.Write([]byte(err.Error())); err != nil {
@@ -109,7 +108,7 @@ func (h *Handler) AuthorizationHandler() echo.HandlerFunc {
 			HttpOnly: true,
 		})
 
-		refreshToken, err := h.tokenService.GetRefreshToken(user)
+		refreshToken, err := h.tokenService.GenerateRefreshToken(h.runner.ID, user)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			if _, err := w.Write([]byte(err.Error())); err != nil {
@@ -148,7 +147,7 @@ func (h *Handler) HandleSession(c echo.Context) error {
 		return c.JSON(400, err.Error())
 	}
 
-	user, err := h.tokenService.ReadAccessToken(cookie.Value)
+	user, err := h.tokenService.ReadAccessToken(h.runner.ID, cookie.Value)
 	if err != nil {
 		return c.JSON(400, err.Error())
 	}
@@ -188,12 +187,12 @@ func (h *Handler) HandleToken(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, err.Error())
 	}
 
-	accessToken, err := h.tokenService.GetAccessToken(user)
+	accessToken, err := h.tokenService.GenerateAccessToken(h.runner.ID, user)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	refreshtoken, err := h.tokenService.GetRefreshToken(user)
+	refreshtoken, err := h.tokenService.GenerateRefreshToken(h.runner.ID, user)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
@@ -223,12 +222,12 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 		return c.JSON(400, "invalid client_id or client_secret")
 	}
 
-	user, err := h.tokenService.ReadRefreshToken(req.RefreshToken)
+	user, err := h.tokenService.ReadRefreshToken(h.runner.ID, req.RefreshToken)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, err.Error())
 	}
 
-	accessToken, err := h.tokenService.GetAccessToken(user)
+	accessToken, err := h.tokenService.GenerateAccessToken(h.runner.ID, user)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}

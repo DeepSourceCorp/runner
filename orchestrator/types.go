@@ -18,7 +18,7 @@ type Storer interface {
 }
 
 type Signer interface {
-	GenerateToken(scope []string, claims map[string]interface{}, expiry time.Duration) (string, error)
+	GenerateToken(issuer string, scope []string, claims map[string]interface{}, expiry time.Duration) (string, error)
 }
 
 type KubernetesOpts struct {

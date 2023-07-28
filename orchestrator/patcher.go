@@ -45,7 +45,7 @@ func (p *PatcherTask) Run(ctx context.Context, req *PatcherRunRequest) error {
 		return err
 	}
 
-	token, err := p.signer.GenerateToken([]string{ScopeAutofix}, nil, 30*time.Minute)
+	token, err := p.signer.GenerateToken("", []string{ScopeAutofix}, nil, 30*time.Minute)
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,11 @@
 package model
 
-import "net/url"
+import (
+	"crypto/rsa"
+	"net/url"
+)
 
 type DeepSource struct {
-	Host url.URL
+	Host      url.URL
+	PublicKey *rsa.PublicKey
 }

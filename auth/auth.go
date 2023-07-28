@@ -4,13 +4,17 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
+	"github.com/deepsourcecorp/runner/auth/jwtutil"
 	"github.com/deepsourcecorp/runner/auth/model"
 	"github.com/deepsourcecorp/runner/auth/oauth"
 	"github.com/deepsourcecorp/runner/auth/saml"
 	"github.com/deepsourcecorp/runner/auth/store"
 	"github.com/deepsourcecorp/runner/auth/token"
+	"github.com/deepsourcecorp/runner/httperror"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/exp/slog"
 )
 
 type Router interface {
@@ -46,9 +50,15 @@ func New(ctx context.Context, opts *Opts, client *http.Client) (*Facade, error) 
 		client = http.DefaultClient
 	}
 
+	deepsourceVerifier := jwtutil.NewVerifier(opts.DeepSource.PublicKey)
+	tokenMiddleware := DeepSourceTokenMiddleware(opts.Runner.ID, deepsourceVerifier)
+
 	// Initialize token service and handlers
-	tokenService := token.NewService(opts.Runner.ID, opts.Runner.PrivateKey)
-	tokenHandlers := token.NewHandler(tokenService)
+	runnerSigner := jwtutil.NewSigner(opts.Runner.PrivateKey)
+	runnerVerifier := jwtutil.NewVerifier(&opts.Runner.PrivateKey.PublicKey)
+	tokenService := token.NewService(runnerSigner, runnerVerifier)
+	tokenHandlers := token.NewHandler(opts.Runner, tokenService)
+	sessionMiddleware := token.SessionAuthMiddleware(opts.Runner.ID, tokenService)
 
 	// Initialize SAML middleware and handlers only if SAML is configured.
 	var samlHandlers *saml.Handler
@@ -57,16 +67,12 @@ func New(ctx context.Context, opts *Opts, client *http.Client) (*Facade, error) 
 		if err != nil {
 			return nil, err
 		}
-		samlHandlers = saml.NewHandler(opts.Runner, opts.DeepSource, samlMiddleware, opts.Store)
+		samlHandlers = saml.NewHandler(opts.Runner, opts.DeepSource, samlMiddleware, tokenService, opts.Store)
 	}
 
 	// Initialize OAuth factory and handlers
 	oauthFactory := oauth.NewFactory(opts.Apps)
-	oauthHandlers := oauth.NewHandler(opts.Runner, opts.DeepSource, opts.Store, oauthFactory)
-
-	// Initialize middlewares
-	tokenMiddleware := token.BearerAuthMiddleware(tokenService)
-	sessionMiddleware := token.SessionAuthMiddleware(tokenService)
+	oauthHandlers := oauth.NewHandler(opts.Runner, opts.DeepSource, opts.Store, tokenService, oauthFactory)
 
 	return &Facade{
 		TokenHandlers:     tokenHandlers,
@@ -96,4 +102,31 @@ func (f *Facade) AddRoutes(r Router) Router {
 		r.AddRoute(http.MethodPost, "/apps/saml/auth/refresh", f.SAMLHandlers.HandleRefresh)
 	}
 	return r
+}
+
+var ErrInvalidToken = httperror.Error{Message: "invalid token"}
+
+func DeepSourceTokenMiddleware(runnerID string, verifier *jwtutil.Verifier) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			authrorization := c.Request().Header.Get("Authorization")
+			parts := strings.SplitN(authrorization, " ", 2)
+			if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+				return c.JSON(http.StatusUnauthorized, ErrInvalidToken)
+			}
+
+			claims, err := verifier.Verify(parts[1])
+			if err != nil {
+				slog.Error("failed to verify token", slog.Any("err", err))
+				return c.JSON(http.StatusUnauthorized, ErrInvalidToken)
+			}
+
+			if claims["runner-id"] != runnerID {
+				return c.JSON(http.StatusUnauthorized, ErrInvalidToken)
+			}
+
+			// Token is valid
+			return next(c)
+		}
+	}
 }

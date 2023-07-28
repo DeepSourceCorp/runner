@@ -21,7 +21,7 @@ func GetOrchestrator(ctx context.Context, c *config.Config, provider orchestrato
 		return nil, fmt.Errorf("error initializing orchestrator: %w", err)
 	}
 
-	signer := jwtutil.NewSigner(c.Runner.ID, c.Runner.PrivateKey)
+	signer := jwtutil.NewSigner(c.Runner.PrivateKey)
 
 	if c.Kubernetes == nil {
 		return nil, errors.New("error initializing orchestrator: kubernetes config is empty")

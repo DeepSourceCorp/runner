@@ -34,7 +34,8 @@ func GetAuthentiacator(ctx context.Context, c *config.Config) (*auth.Facade, err
 	}
 
 	deepsource := &model.DeepSource{
-		Host: c.DeepSource.Host,
+		Host:      c.DeepSource.Host,
+		PublicKey: c.DeepSource.PublicKey,
 	}
 
 	opts := &auth.Opts{

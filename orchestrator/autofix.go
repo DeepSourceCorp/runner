@@ -39,7 +39,7 @@ func (t *AutofixTask) Run(ctx context.Context, req *AutofixRunRequest) error {
 		return err
 	}
 
-	token, err := t.signer.GenerateToken([]string{ScopeAutofix}, nil, 30*time.Minute)
+	token, err := t.signer.GenerateToken("", []string{ScopeAutofix}, nil, 30*time.Minute)
 	if err != nil {
 		return err
 	}

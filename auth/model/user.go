@@ -10,7 +10,7 @@ type User struct {
 	Provider string `json:"provider"`
 }
 
-func (u *User) ToMap() map[string]interface{} {
+func (u *User) Claims() map[string]interface{} {
 	return map[string]interface{}{
 		"id":       u.ID,
 		"name":     u.Name,

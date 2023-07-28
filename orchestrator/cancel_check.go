@@ -76,7 +76,7 @@ func (t *CancelCheckTask) Run(ctx context.Context, run *artifact.CancelCheckRun)
 	}
 
 	publisherURL := t.opts.RemoteHost + cancelCheckPublishPath
-	publisherToken, err := t.signer.GenerateToken([]string{ScopeAnalysis}, nil, 30*time.Minute)
+	publisherToken, err := t.signer.GenerateToken("", []string{ScopeAnalysis}, nil, 30*time.Minute)
 	if err != nil {
 		return err
 	}
