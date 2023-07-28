@@ -112,6 +112,7 @@ func DeepSourceTokenMiddleware(runnerID string, verifier *jwtutil.Verifier) echo
 			authrorization := c.Request().Header.Get("Authorization")
 			parts := strings.SplitN(authrorization, " ", 2)
 			if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+				slog.Error("not a valid bearer token", slog.Any("header", authrorization))
 				return c.JSON(http.StatusUnauthorized, ErrInvalidToken)
 			}
 
@@ -122,6 +123,7 @@ func DeepSourceTokenMiddleware(runnerID string, verifier *jwtutil.Verifier) echo
 			}
 
 			if claims["runner-id"] != runnerID {
+				slog.Error("runner id mismatch", slog.Any("runner-id", claims["runner-id"]))
 				return c.JSON(http.StatusUnauthorized, ErrInvalidToken)
 			}
 
