@@ -4,5 +4,3 @@ bin/**
 # Others
 .DS_Store
 .vscode/**
-
-helm/runner/values/
