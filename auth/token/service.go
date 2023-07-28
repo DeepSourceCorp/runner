@@ -2,6 +2,7 @@ package token
 
 import (
 	"errors"
+	"strings"
 
 	"time"
 
@@ -49,7 +50,14 @@ func (s *Service) ReadToken(issuer string, scope string, token string) (*model.U
 		return nil, errors.New("invalid issuer")
 	}
 
-	if claims["scp"] != scope {
+	scopeParts := strings.Split(claims["scp"].(string), " ")
+	scopeValid := false
+	for _, s := range scopeParts {
+		if s == scope {
+			scopeValid = true
+		}
+	}
+	if !scopeValid {
 		return nil, errors.New("invalid scope")
 	}
 
