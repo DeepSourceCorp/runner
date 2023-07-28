@@ -30,7 +30,7 @@ func (f *Factory) GetBackend(appID string) (IBackend, error) {
 	if app == nil {
 		return nil, fmt.Errorf("no configuration found for app %s", appID)
 	}
-	switch app.Provider {
+	switch app.Provider { // skipcq: CRT-A0014
 	case "github":
 		return NewGithub(app)
 	}

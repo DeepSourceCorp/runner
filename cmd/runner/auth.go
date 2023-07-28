@@ -56,8 +56,8 @@ func GetAuthentiacator(ctx context.Context, c *config.Config) (*auth.Facade, err
 func createOAuthApps(c *config.Config) map[string]*oauth.App {
 	apps := make(map[string]*oauth.App)
 	for _, v := range c.Apps {
-		switch {
-		case v.Provider == "github":
+		switch v.Provider { // skipcq: CRT-A0014
+		case "github":
 			apps[v.ID] = &oauth.App{
 				ID:           v.ID,
 				ClientID:     v.Github.ClientID,
