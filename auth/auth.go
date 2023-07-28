@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -123,9 +122,7 @@ func DeepSourceTokenMiddleware(runnerID string, verifier *jwtutil.Verifier) echo
 				return c.JSON(http.StatusUnauthorized, ErrInvalidToken)
 			}
 
-			fmt.Println("XXXXX", claims)
-
-			if claims["runner-id"] != runnerID {
+			if claims["runner_id"] != runnerID {
 				slog.Error("runner id mismatch", slog.Any("runner-id", claims["runner-id"]))
 				return c.JSON(http.StatusUnauthorized, ErrInvalidToken)
 			}
