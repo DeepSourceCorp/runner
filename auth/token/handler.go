@@ -28,12 +28,12 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, "invalid refresh token")
 	}
 
-	user, err := h.service.ReadRefreshToken(h.runner.ID, cookie.Value)
+	user, err := h.service.ReadToken(h.runner.ID, ScopeRefresh, cookie.Value)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, err.Error())
 	}
 
-	accessToken, err := h.service.GenerateAccessToken(h.runner.ID, user)
+	accessToken, err := h.service.GenerateToken(h.runner.ID, []string{ScopeUser, ScopeCodeRead}, user)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}

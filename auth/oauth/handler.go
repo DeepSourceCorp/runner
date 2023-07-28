@@ -87,17 +87,17 @@ func (h *Handler) HandleCallback(c echo.Context) error {
 		return c.JSON(400, err.Error())
 	}
 
-	token, err := backend.GetToken(ctx, req.Code)
+	t, err := backend.GetToken(ctx, req.Code)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
 
-	user, err := backend.GetUser(ctx, token)
+	user, err := backend.GetUser(ctx, t)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
 
-	accessToken, err := h.tokenService.GenerateAccessToken(h.runner.ID, user)
+	accessToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser, token.ScopeCodeRead}, user)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
@@ -111,7 +111,7 @@ func (h *Handler) HandleCallback(c echo.Context) error {
 		HttpOnly: true,
 	})
 
-	refreshToken, err := h.tokenService.GenerateRefreshToken(h.runner.ID, user)
+	refreshToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeRefresh}, user)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
@@ -143,7 +143,7 @@ func (h *Handler) HandleSession(c echo.Context) error {
 		return c.JSON(400, err.Error())
 	}
 
-	user, err := h.tokenService.ReadAccessToken(h.runner.ID, cookie.Value)
+	user, err := h.tokenService.ReadToken(h.runner.ID, token.ScopeUser, cookie.Value)
 	if err != nil {
 		return c.JSON(400, err.Error())
 	}
@@ -185,11 +185,11 @@ func (h *Handler) HandleToken(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, err.Error())
 	}
 
-	accessToken, err := h.tokenService.GenerateAccessToken(h.runner.ID, user)
+	accessToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser}, user)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
-	refreshtToken, err := h.tokenService.GenerateRefreshToken(h.runner.ID, user)
+	refreshtToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser}, user)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
@@ -237,7 +237,7 @@ func (h *Handler) HandleUser(c echo.Context) error {
 		return c.JSON(400, err.Error())
 	}
 
-	user, err := h.tokenService.ReadAccessToken(h.runner.ID, req.AccessToken)
+	user, err := h.tokenService.ReadToken(h.runner.ID, token.ScopeUser, req.AccessToken)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, err.Error())
 	}
@@ -267,12 +267,12 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 		return c.JSON(400, "invalid client_id or client_secret")
 	}
 
-	user, err := h.tokenService.ReadRefreshToken(h.runner.ID, req.RefreshToken)
+	user, err := h.tokenService.ReadToken(h.runner.ID, token.ScopeRefresh, req.RefreshToken)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, err.Error())
 	}
 
-	accessToken, err := h.tokenService.GenerateAccessToken(h.runner.ID, user)
+	accessToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser}, user)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}

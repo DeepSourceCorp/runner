@@ -16,7 +16,7 @@ func SessionAuthMiddleware(runnerID string, service *Service) echo.MiddlewareFun
 			if cookie.Value == "" {
 				return c.Redirect(http.StatusTemporaryRedirect, "/refresh")
 			}
-			_, err = service.ReadAccessToken(runnerID, cookie.Value)
+			_, err = service.ReadToken(runnerID, ScopeCodeRead, cookie.Value)
 			if err != nil {
 				return c.Redirect(http.StatusTemporaryRedirect, "/refresh")
 			}

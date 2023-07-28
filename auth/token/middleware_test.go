@@ -15,84 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// func TestBearerAuthMiddleware(t *testing.T) {
-// 	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
-// 	service := NewService("test-runner", privateKey)
-// 	middleware := BearerAuthMiddleware(service)
-// 	assert.NotNil(t, middleware)
-
-// 	t.Run("missing token", func(t *testing.T) {
-// 		req := httptest.NewRequest("GET", "/", nil)
-// 		rec := httptest.NewRecorder()
-// 		c := echo.New().NewContext(req, rec)
-// 		h := middleware(func(c echo.Context) error {
-// 			return c.HTML(200, "test")
-// 		})
-// 		err := h(c)
-// 		assert.NoError(t, err)
-
-// 		assert.Equal(t, 401, rec.Code)
-// 		assert.JSONEq(t, `{"message":"invalid token"}`, rec.Body.String())
-// 	})
-
-// 	t.Run("invalid token", func(t *testing.T) {
-// 		req := httptest.NewRequest("GET", "/", nil)
-// 		req.Header.Set("Authorization", "Bearer invalid-token")
-// 		rec := httptest.NewRecorder()
-// 		c := echo.New().NewContext(req, rec)
-// 		h := middleware(func(c echo.Context) error {
-// 			return c.HTML(200, "test")
-// 		})
-// 		err := h(c)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 401, rec.Code)
-// 		assert.JSONEq(t, `{"message":"invalid token"}`, rec.Body.String())
-// 	})
-
-// 	user := &model.User{
-// 		ID:       "user-id",
-// 		Name:     "user-name",
-// 		Email:    "user-email",
-// 		Provider: "user-provider",
-// 		Login:    "user-login",
-// 	}
-
-// 	t.Run("invalid runner id", func(t *testing.T) {
-// 		manager := NewService("invalid-runner-id", privateKey)
-// 		token, err := manager.GetAccessToken(user)
-// 		assert.NoError(t, err)
-
-// 		req := httptest.NewRequest("GET", "/", nil)
-// 		req.Header.Set("Authorization", "Bearer "+token)
-// 		rec := httptest.NewRecorder()
-// 		c := echo.New().NewContext(req, rec)
-// 		h := middleware(func(c echo.Context) error {
-// 			return c.HTML(200, "test")
-// 		})
-// 		err = h(c)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 401, rec.Code)
-// 		assert.JSONEq(t, `{"message":"invalid token"}`, rec.Body.String())
-// 	})
-
-// 	t.Run("valid token", func(t *testing.T) {
-// 		token, err := service.GetAccessToken(user)
-// 		assert.NoError(t, err)
-
-// 		req := httptest.NewRequest("GET", "/", nil)
-// 		req.Header.Set("Authorization", "Bearer "+token)
-// 		rec := httptest.NewRecorder()
-// 		c := echo.New().NewContext(req, rec)
-// 		h := middleware(func(c echo.Context) error {
-// 			return c.HTML(200, "test")
-// 		})
-// 		err = h(c)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 200, rec.Code)
-// 		assert.Equal(t, "test", rec.Body.String())
-// 	})
-// }
-
 func TestSessionAuthMiddleware(t *testing.T) {
 	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
 	signer := jwtutil.NewSigner(privateKey)
@@ -154,7 +76,7 @@ func TestSessionAuthMiddleware(t *testing.T) {
 
 	t.Run("token expired", func(t *testing.T) {
 		ExpiryAccessToken = -1 * time.Minute
-		token, err := service.GenerateAccessToken("runner-id", user)
+		token, err := service.GenerateToken("runner-id", []string{ScopeUser}, user)
 		require.NoError(t, err)
 		req := httptest.NewRequest("GET", "/", nil)
 		req.AddCookie(&http.Cookie{Name: "session", Value: token})
@@ -171,7 +93,7 @@ func TestSessionAuthMiddleware(t *testing.T) {
 
 	t.Run("valid token", func(t *testing.T) {
 		ExpiryAccessToken = 10 * time.Minute
-		token, err := service.GenerateAccessToken("runner-id", user)
+		token, err := service.GenerateToken("runner-id", []string{ScopeCodeRead}, user)
 		require.NoError(t, err)
 		req := httptest.NewRequest("GET", "/", nil)
 		req.AddCookie(&http.Cookie{Name: "session", Value: token})
