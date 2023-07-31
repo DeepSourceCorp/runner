@@ -16,8 +16,9 @@ func GetArtifacts(ctx context.Context, c *config.Config) (*artifact.Facade, erro
 	}
 
 	opts := &artifact.Opts{
-		Storage: storage,
-		Bucket:  c.ObjectStorage.Bucket,
+		Storage:       storage,
+		Bucket:        c.ObjectStorage.Bucket,
+		AllowedOrigin: c.DeepSource.Host.String(),
 	}
 
 	return artifact.New(ctx, opts)

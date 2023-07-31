@@ -39,11 +39,12 @@ func GetAuthentiacator(ctx context.Context, c *config.Config) (*auth.Facade, err
 	}
 
 	opts := &auth.Opts{
-		Runner:     runner,
-		DeepSource: deepsource,
-		Apps:       apps,
-		Store:      store,
-		SAML:       samlOpts,
+		Runner:        runner,
+		DeepSource:    deepsource,
+		Apps:          apps,
+		Store:         store,
+		SAML:          samlOpts,
+		AllowedOrigin: c.DeepSource.Host.String(),
 	}
 
 	app, err := auth.New(ctx, opts, http.DefaultClient)
