@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/deepsourcecorp/runner/middleware"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -25,11 +27,13 @@ var (
 
 type Facade struct {
 	ArtifactHandler *Handler
+	allowedOrigin   string
 }
 
 type Opts struct {
-	Bucket  string
-	Storage StorageClient
+	AllowedOrigin string // For CORS
+	Bucket        string
+	Storage       StorageClient
 }
 
 func New(ctx context.Context, opts *Opts) (*Facade, error) {
@@ -38,12 +42,18 @@ func New(ctx context.Context, opts *Opts) (*Facade, error) {
 	}
 
 	return &Facade{
+		allowedOrigin:   opts.AllowedOrigin,
 		ArtifactHandler: NewHandler(opts.Storage, opts.Bucket),
 	}, nil
 }
 
-func (f *Facade) AddRoutes(router Router, middleware []echo.MiddlewareFunc) Router {
-	router.AddRoute(http.MethodPost, "apps/:app_id/artifacts/analysis", f.ArtifactHandler.HandleAnalysis, middleware...)
-	router.AddRoute(http.MethodPost, "apps/:app_id/artifacts/autofix", f.ArtifactHandler.HandleAutofix, middleware...)
+func (f *Facade) AddRoutes(router Router, m []echo.MiddlewareFunc) Router {
+	cors := middleware.CorsMiddleware(f.allowedOrigin)
+	router.AddRoute(http.MethodOptions, "apps/:app_id/artifacts", func(c echo.Context) error { return c.NoContent(http.StatusOK) }, cors)
+
+	m = append([]echo.MiddlewareFunc{cors}, m...)
+	router.AddRoute(http.MethodPost, "apps/:app_id/artifacts/analysis", f.ArtifactHandler.HandleAnalysis, m...)
+	router.AddRoute(http.MethodPost, "apps/:app_id/artifacts/autofix", f.ArtifactHandler.HandleAutofix, m...)
+
 	return router
 }
