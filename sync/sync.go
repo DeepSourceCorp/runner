@@ -74,12 +74,11 @@ func (s *Syncer) Sync() error {
 	if err != nil {
 		return fmt.Errorf("failed to sync to DeepSource: %w", err)
 	}
-	defer response.Body.Close()
 
 	if !(response.StatusCode == http.StatusOK || response.StatusCode == http.StatusCreated) {
 		return fmt.Errorf("failed to sync to DeepSource: status=%d", response.StatusCode)
 	}
 
-	return nil
+	return response.Body.Close()
 
 }

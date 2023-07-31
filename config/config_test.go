@@ -11,7 +11,7 @@ func TestLoadConfig(t *testing.T) {
 	t.Setenv("TASK_IMAGE_PULL_SECRET_NAME", "default")
 	t.Setenv("TASK_IMAGE_REGISTRY_URL", "example.com")
 	t.Setenv("TASK_NAMESPACE", "default")
-	t.Setenv("TASK_NODE_SELECTOR", "foo=bar")
+	t.Setenv("TASK_NODE_SELECTOR", "foo: bar")
 	input := `
 runner:
   id: "runner-id"
