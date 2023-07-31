@@ -15,6 +15,7 @@ type Handler struct {
 func NewHandler(runner *model.Runner, service *Service) *Handler {
 	return &Handler{
 		service: service,
+		runner:  runner,
 	}
 }
 
