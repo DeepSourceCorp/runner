@@ -1,6 +1,7 @@
 package config
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,6 +10,10 @@ import (
 )
 
 func TestKubernetes_UnmarshalYAML(t *testing.T) {
+	t.Setenv("TASK_IMAGE_PULL_SECRET_NAME", "default")
+	t.Setenv("TASK_IMAGE_REGISTRY_URL", "example.com")
+	t.Setenv("TASK_NAMESPACE", "default")
+	t.Setenv("TASK_NODE_SELECTOR", "foo: bar")
 	input := `
 namespace: default
 nodeSelector:
@@ -19,4 +24,8 @@ nodeSelector:
 	require.NoError(t, err)
 	assert.Equal(t, "default", k.Namespace)
 	assert.Equal(t, map[string]string{"foo": "bar"}, k.NodeSelector)
+	assert.Equal(t, "default", k.ImageRegistry.PullSecretName)
+
+	u, _ := url.Parse("example.com")
+	assert.Equal(t, *u, k.ImageRegistry.RegistryUrl)
 }
