@@ -38,7 +38,7 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, err.Error())
 	}
 
-	accessToken, err := h.service.GenerateToken(h.runner.ID, []string{ScopeUser, ScopeCodeRead}, user)
+	accessToken, err := h.service.GenerateToken(h.runner.ID, []string{ScopeUser, ScopeCodeRead}, user, ExpiryAccessToken)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}

@@ -76,7 +76,7 @@ func TestSessionAuthMiddleware(t *testing.T) {
 
 	t.Run("token expired", func(t *testing.T) {
 		ExpiryAccessToken = -1 * time.Minute
-		token, err := service.GenerateToken("runner-id", []string{ScopeUser}, user)
+		token, err := service.GenerateToken("runner-id", []string{ScopeUser}, user, ExpiryAccessToken)
 		require.NoError(t, err)
 		req := httptest.NewRequest("GET", "/", nil)
 		req.AddCookie(&http.Cookie{Name: "session", Value: token})
@@ -93,7 +93,7 @@ func TestSessionAuthMiddleware(t *testing.T) {
 
 	t.Run("valid token", func(t *testing.T) {
 		ExpiryAccessToken = 10 * time.Minute
-		token, err := service.GenerateToken("runner-id", []string{ScopeCodeRead}, user)
+		token, err := service.GenerateToken("runner-id", []string{ScopeCodeRead}, user, ExpiryAccessToken)
 		require.NoError(t, err)
 		req := httptest.NewRequest("GET", "/", nil)
 		req.AddCookie(&http.Cookie{Name: "session", Value: token})
