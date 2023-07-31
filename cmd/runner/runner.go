@@ -34,6 +34,7 @@ type Server struct {
 	*echo.Echo
 	*config.Config
 	*http.Client
+	cors echo.MiddlewareFunc
 }
 
 func NewServer(c *config.Config) *Server {
@@ -44,7 +45,8 @@ func NewServer(c *config.Config) *Server {
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "time=${time_rfc3339_nano} level=INFO method=${method}, uri=${uri}, status=${status}\n",
 	}))
-	return &Server{Echo: e, Config: c}
+	cors := CorsMiddleware(c.DeepSource.Host.String())
+	return &Server{Echo: e, Config: c, cors: cors}
 }
 
 func (s *Server) Start() error {
@@ -66,6 +68,9 @@ func (s *Server) Router() (*Router, error) {
 		Routes: []Route{
 			{
 				Method: http.MethodGet, Path: "/readyz", HandlerFunc: func(c echo.Context) error { return c.JSON(http.StatusOK, map[string]interface{}{"status": "ok"}) },
+			},
+			{
+				Method: http.MethodOptions, Path: "/*", HandlerFunc: func(c echo.Context) error { return c.NoContent(http.StatusOK) }, Middleware: []echo.MiddlewareFunc{s.cors},
 			},
 		},
 	}
