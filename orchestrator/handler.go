@@ -6,7 +6,6 @@ import (
 
 	artifact "github.com/deepsourcelabs/artifacts/types"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/exp/slog"
 )
 
 type Handler struct {
@@ -24,7 +23,6 @@ func NewHandler(
 	signer Signer,
 	runner *Runner,
 ) *Handler {
-	slog.Info("initializing orchestrator handler", slog.Any("opts", opts))
 	return &Handler{
 		analysisTask:    NewAnalysisTask(runner, opts, driver, provider, signer),
 		autofixTask:     NewAutofixTask(runner, opts, driver, provider, signer),

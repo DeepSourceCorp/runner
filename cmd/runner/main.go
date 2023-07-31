@@ -46,7 +46,6 @@ func LoadConfig() (*config.Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
-	slog.Info("config loaded successfully")
 	return cfg, nil
 }
 
@@ -59,13 +58,15 @@ func SetLogLevel() {
 func main() {
 	ParseFlags()
 	SetLogLevel()
-
 	ctx := context.Background()
-
 	c, err := LoadConfig()
 	if err != nil {
 		slog.Error("failed to load config", slog.Any("err", err))
 		os.Exit(1)
+	}
+	s := NewServer(c)
+	if !HideBanner {
+		s.PrintBanner()
 	}
 
 	err = Migrate(c.RQLite)
@@ -80,7 +81,6 @@ func main() {
 		slog.Warn("failed to sync upstream", slog.Any("err", err))
 	}
 
-	s := NewServer(c)
 	r, err := s.Router()
 	if err != nil {
 		slog.Error("failed to initialize router", slog.Any("err", err))
@@ -107,6 +107,13 @@ func main() {
 		os.Exit(1)
 	}
 	orchestrator.AddRoutes(r, []echo.MiddlewareFunc{auth.TokenMiddleware})
+
+	artifacts, err := GetArtifacts(ctx, c)
+	if err != nil {
+		slog.Error("failed to initialize artifacts app", slog.Any("err", err))
+		os.Exit(1)
+	}
+	artifacts.AddRoutes(r, []echo.MiddlewareFunc{auth.SessionMiddleware})
 
 	go orchestrator.Cleaner.Start(ctx)
 

@@ -1,12 +1,15 @@
 package sync
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
+	"github.com/deepsourcecorp/runner/auth/jwtutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +32,7 @@ func TestSyncer_Sync(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		assert.Equal(t, http.MethodPut, r.Method)
-		assert.Equal(t, "/api/runners/", r.URL.Path)
+		assert.Equal(t, "/api/runner/", r.URL.Path)
 
 		payload := &Payload{}
 		err := json.NewDecoder(r.Body).Decode(payload)
@@ -51,7 +54,10 @@ func TestSyncer_Sync(t *testing.T) {
 		Host: *deepsourceHost,
 	}
 
-	syncer := New(deepsource, runner, apps, nil)
+	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
+	signer := jwtutil.NewSigner(privateKey)
+
+	syncer := New(deepsource, runner, apps, signer, nil)
 	err := syncer.Sync()
 	assert.NoError(t, err)
 	server.Close()

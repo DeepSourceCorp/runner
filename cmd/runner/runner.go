@@ -48,9 +48,6 @@ func NewServer(c *config.Config) *Server {
 }
 
 func (s *Server) Start() error {
-	if !HideBanner {
-		s.PrintBanner()
-	}
 	err := s.Echo.Start(fmt.Sprintf(":%d", RunnerPort))
 	if err != nil {
 		slog.Error("failed to start server", slog.Any("err", err))
