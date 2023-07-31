@@ -1,7 +1,6 @@
 package token
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/deepsourcecorp/runner/auth/model"
@@ -21,12 +20,8 @@ func NewHandler(runner *model.Runner, service *Service) *Handler {
 }
 
 func (h *Handler) HandleRefresh(c echo.Context) error {
-	referrer := c.Request().Referer()
-	if referrer == "" {
-		referrer = c.QueryParam("redirect")
-	}
 
-	fmt.Println("\n\nXXXXX", referrer)
+	referrer := c.QueryParam("redirect")
 
 	cookie, err := c.Cookie("refresh")
 	if err != nil {
