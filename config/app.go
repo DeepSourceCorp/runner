@@ -5,7 +5,8 @@ const (
 )
 
 type App struct {
-	ID       string  `yaml:"name"`
+	ID       string  `yaml:"id"`
+	Name     string  `yaml:"name"`
 	Provider string  `yaml:"provider"`
 	Github   *Github `yaml:"github"`
 }

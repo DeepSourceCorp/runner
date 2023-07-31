@@ -8,6 +8,10 @@ import (
 )
 
 func TestLoadConfig(t *testing.T) {
+	t.Setenv("TASK_IMAGE_PULL_SECRET_NAME", "default")
+	t.Setenv("TASK_IMAGE_REGISTRY_URL", "example.com")
+	t.Setenv("TASK_NAMESPACE", "default")
+	t.Setenv("TASK_NODE_SELECTOR", "foo=bar")
 	input := `
 runner:
   id: "runner-id"
@@ -99,12 +103,6 @@ kubernetes:
   namespace: default
   nodeSelector:
     foo: bar
-  imageRegistry:
-    pullSecretName: "quay-secret"
-    registryUrl: "https://quay.io"
-    username: "quay-user"
-    password: "quay-password"
-
 rqlite:
   host: "localhost"
   port: 4001
