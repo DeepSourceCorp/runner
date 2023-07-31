@@ -49,7 +49,7 @@ func New(ctx context.Context, opts *Opts) (*Facade, error) {
 
 func (f *Facade) AddRoutes(router Router, middleware []echo.MiddlewareFunc) Router {
 	middleware = append([]echo.MiddlewareFunc{f.CORSMiddleware}, middleware...)
-	router.AddRoute(http.MethodOptions, "apps/:app_id/artifacts/*", f.ArtifactHandler.HandleOptions, middleware...)
+	router.AddRoute(http.MethodOptions, "apps/:app_id/artifacts/*", f.ArtifactHandler.HandleOptions, []echo.MiddlewareFunc{f.CORSMiddleware}...)
 	router.AddRoute(http.MethodPost, "apps/:app_id/artifacts/analysis", f.ArtifactHandler.HandleAnalysis, middleware...)
 	router.AddRoute(http.MethodPost, "apps/:app_id/artifacts/autofix", f.ArtifactHandler.HandleAutofix, middleware...)
 	return router

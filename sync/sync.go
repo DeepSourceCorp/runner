@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -58,9 +59,7 @@ func New(deepsource *DeepSource, runner *Runner, apps []App, signer Signer, clie
 
 func (s *Syncer) Sync() error {
 	payload := &Payload{
-		RunnerID:      s.runner.ID,
 		BaseURL:       s.runner.Host.String(),
-		ClientID:      s.runner.ClientID,
 		ClientSecret:  s.runner.ClientSecret,
 		WebhookSecret: s.runner.WebhookSecret,
 		Apps:          s.apps,
@@ -91,7 +90,11 @@ func (s *Syncer) Sync() error {
 	}
 
 	if !(response.StatusCode == http.StatusOK || response.StatusCode == http.StatusCreated) {
-		return fmt.Errorf("failed to sync to DeepSource: status=%d", response.StatusCode)
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
+			return fmt.Errorf("failed to sync to DeepSource: %w", err)
+		}
+		return fmt.Errorf("failed to sync to DeepSource: code=%d, body=%s", response.StatusCode, string(body))
 	}
 
 	return response.Body.Close()

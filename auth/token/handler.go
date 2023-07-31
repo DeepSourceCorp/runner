@@ -37,6 +37,7 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
+
 	c.SetCookie(&http.Cookie{
 		Name:     "session",
 		Value:    accessToken,

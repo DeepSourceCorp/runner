@@ -9,6 +9,10 @@ import (
 	"github.com/deepsourcecorp/runner/sync"
 )
 
+var providers = map[string]string{
+	"github": "gh",
+}
+
 func GetSyncer(_ context.Context, c *config.Config, client *http.Client) *sync.Syncer {
 	deepsource := &sync.DeepSource{
 		Host: c.DeepSource.Host,
@@ -26,7 +30,7 @@ func GetSyncer(_ context.Context, c *config.Config, client *http.Client) *sync.S
 		apps = append(apps, sync.App{
 			ID:       a.ID,
 			Name:     a.Name,
-			Provider: a.Provider,
+			Provider: providers[a.Provider],
 		})
 	}
 
