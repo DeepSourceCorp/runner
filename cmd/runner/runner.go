@@ -1,13 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/deepsourcecorp/runner/config"
 	"github.com/getsentry/sentry-go"
-	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/exp/slog"
@@ -51,7 +51,7 @@ func NewServer(c *config.Config) *Server {
 		}); err != nil {
 			slog.Error("failed to initialize sentry", slog.Any("err", err))
 		}
-		e.Use(sentryecho.New(sentryecho.Options{}))
+		e.HTTPErrorHandler = RunnerHTTPErrorHandler
 	}
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "time=${time_rfc3339_nano} level=INFO method=${method}, uri=${uri}, status=${status}\n",
@@ -78,7 +78,9 @@ func (s *Server) Router() (*Router, error) {
 		e: s.Echo,
 		Routes: []Route{
 			{
-				Method: http.MethodGet, Path: "/readyz", HandlerFunc: func(c echo.Context) error { return c.JSON(http.StatusOK, map[string]interface{}{"status": "ok"}) },
+				Method: http.MethodGet, Path: "/readyz", HandlerFunc: func(c echo.Context) error {
+					return errors.New("text")
+				},
 			},
 			{
 				Method: http.MethodOptions, Path: "/*", HandlerFunc: func(c echo.Context) error { return c.NoContent(http.StatusOK) }, Middleware: []echo.MiddlewareFunc{s.cors},

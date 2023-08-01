@@ -11,7 +11,7 @@ import (
 
 var (
 	ErrNoVCS = httperror.Error{Message: "no VCS provider found for the given app ID"}
-	ErrNoApp = httperror.Error{Message: "no app found for the given app ID"}
+	ErrNoApp = &httperror.Error{Message: "no app found for the given app ID"}
 )
 
 // Adapter is a unified interface for all VCS providers.  We maintain a map
