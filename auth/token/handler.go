@@ -15,11 +15,14 @@ type Handler struct {
 func NewHandler(runner *model.Runner, service *Service) *Handler {
 	return &Handler{
 		service: service,
+		runner:  runner,
 	}
 }
 
 func (h *Handler) HandleRefresh(c echo.Context) error {
-	referrer := c.Request().Referer()
+
+	referrer := c.QueryParam("redirect")
+
 	cookie, err := c.Cookie("refresh")
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, err.Error())
@@ -33,10 +36,11 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, err.Error())
 	}
 
-	accessToken, err := h.service.GenerateToken(h.runner.ID, []string{ScopeUser, ScopeCodeRead}, user)
+	accessToken, err := h.service.GenerateToken(h.runner.ID, []string{ScopeUser, ScopeCodeRead}, user, ExpiryAccessToken)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
+
 	c.SetCookie(&http.Cookie{
 		Name:     "session",
 		Value:    accessToken,

@@ -3,7 +3,6 @@ package artifact
 import (
 	"fmt"
 	"io"
-	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slog"
@@ -119,8 +118,4 @@ func (h *Handler) HandleAutofix(c echo.Context) error {
 		}
 	}
 	return c.JSON(200, autofixArtifactsResponse)
-}
-
-func (*Handler) HandleOptions(c echo.Context) error {
-	return c.NoContent(http.StatusOK)
 }

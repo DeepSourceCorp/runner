@@ -13,6 +13,7 @@ import (
 	"github.com/deepsourcecorp/runner/auth/store"
 	"github.com/deepsourcecorp/runner/auth/token"
 	"github.com/deepsourcecorp/runner/httperror"
+	"github.com/deepsourcecorp/runner/middleware"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slog"
 )
@@ -27,14 +28,16 @@ type Facade struct {
 	SAMLHandlers      *saml.Handler
 	TokenMiddleware   echo.MiddlewareFunc
 	SessionMiddleware echo.MiddlewareFunc
+	allowedOrigin     string
 }
 
 type Opts struct {
-	Runner     *model.Runner
-	DeepSource *model.DeepSource
-	Apps       map[string]*oauth.App
-	SAML       *saml.Opts
-	Store      store.Store
+	Runner        *model.Runner
+	DeepSource    *model.DeepSource
+	Apps          map[string]*oauth.App
+	SAML          *saml.Opts
+	Store         store.Store
+	AllowedOrigin string // For CORS
 }
 
 func New(ctx context.Context, opts *Opts, client *http.Client) (*Facade, error) {
@@ -80,11 +83,13 @@ func New(ctx context.Context, opts *Opts, client *http.Client) (*Facade, error) 
 		TokenMiddleware:   tokenMiddleware,
 		SessionMiddleware: sessionMiddleware,
 		SAMLHandlers:      samlHandlers,
+		allowedOrigin:     opts.AllowedOrigin,
 	}, nil
 }
 
 func (f *Facade) AddRoutes(r Router) Router {
-	r.AddRoute(http.MethodPost, "/refresh", f.TokenHandlers.HandleRefresh)
+	cors := middleware.CorsMiddleware(f.allowedOrigin)
+	r.AddRoute(http.MethodPost, "/refresh", f.TokenHandlers.HandleRefresh, cors)
 	r.AddRoute(http.MethodPost, "/logout", f.TokenHandlers.HandleLogout)
 
 	r.AddRoute(http.MethodGet, "/apps/:app_id/auth/authorize", f.OAuthHandlers.HandleAuthorize)

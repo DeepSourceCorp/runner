@@ -15,10 +15,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const (
-	ExpiryAccessToken = 15 * time.Minute
-)
-
 type Handler struct {
 	runner     *model.Runner
 	deepsource *model.DeepSource
@@ -97,7 +93,7 @@ func (h *Handler) HandleCallback(c echo.Context) error {
 		return c.JSON(500, err.Error())
 	}
 
-	accessToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser, token.ScopeCodeRead}, user)
+	accessToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser, token.ScopeCodeRead}, user, token.ExpiryAccessToken)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
@@ -111,7 +107,7 @@ func (h *Handler) HandleCallback(c echo.Context) error {
 		HttpOnly: true,
 	})
 
-	refreshToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeRefresh}, user)
+	refreshToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeRefresh}, user, token.ExpiryRefreshToken)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
@@ -185,11 +181,11 @@ func (h *Handler) HandleToken(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, err.Error())
 	}
 
-	accessToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser}, user)
+	accessToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser}, user, token.ExpiryAccessToken)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
-	refreshtToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser}, user)
+	refreshtToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser}, user, token.ExpiryRefreshToken)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
@@ -272,7 +268,7 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, err.Error())
 	}
 
-	accessToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser}, user)
+	accessToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser}, user, token.ExpiryAccessToken)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
