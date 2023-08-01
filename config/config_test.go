@@ -166,7 +166,9 @@ objectStorage:
       "client_email": "dummy@google.com",
       "client_id": "123",
       "type": "service_account"
-    }`
+    }
+sentry:
+  dsn: https://sentry.io/123`
 
 	var c Config
 	err := yaml.Unmarshal([]byte(input), &c)

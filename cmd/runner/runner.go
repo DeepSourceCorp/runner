@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/deepsourcecorp/runner/config"
+	"github.com/getsentry/sentry-go"
+	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/exp/slog"
@@ -38,10 +40,19 @@ type Server struct {
 }
 
 func NewServer(c *config.Config) *Server {
+	if c.Sentry != nil && c.Sentry.DSN != "" {
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn: c.Sentry.DSN,
+		}); err != nil {
+			slog.Error("failed to initialize sentry", slog.Any("err", err))
+		}
+	}
+
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
-	// e.Use(middleware.Recover())
+	e.Use(middleware.Recover())
+	e.Use(sentryecho.New(sentryecho.Options{}))
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "time=${time_rfc3339_nano} level=INFO method=${method}, uri=${uri}, status=${status}\n",
 	}))
