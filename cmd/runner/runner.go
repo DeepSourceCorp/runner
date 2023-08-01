@@ -45,7 +45,6 @@ func NewServer(c *config.Config) *Server {
 	e.HidePort = true
 	e.Use(middleware.Recover())
 	if c.Sentry != nil && c.Sentry.DSN != "" {
-		fmt.Println("sentry dsn", c.Sentry.DSN)
 		if err := sentry.Init(sentry.ClientOptions{
 			Dsn: c.Sentry.DSN,
 		}); err != nil {
