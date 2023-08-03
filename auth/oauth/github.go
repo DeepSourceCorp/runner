@@ -1,7 +1,6 @@
 package oauth
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -44,7 +43,7 @@ func NewGithub(app *App) (IBackend, error) {
 				TokenURL: app.AuthHost.JoinPath(GithubURLToken).String(),
 			},
 			RedirectURL: app.RedirectURL.String(),
-			Scopes:      []string{},
+			Scopes:      []string{"read:user", "user:email"},
 		},
 		client:   &http.Client{},
 		authHost: app.AuthHost,
@@ -61,76 +60,11 @@ func (g *Github) GetToken(ctx context.Context, code string) (*oauth2.Token, erro
 	return g.config.Exchange(ctx, code)
 }
 
-func (g *Github) RefreshToken(_ context.Context, refreshToken string) (*oauth2.Token, error) {
-	payload := struct {
-		ClientID     string `json:"client_id"`
-		ClientSecret string `json:"client_secret"`
-		GrantType    string `json:"grant_type"`
-		RefreshToken string `json:"refresh_token"`
-	}{
-		ClientID:     g.config.ClientID,
-		ClientSecret: g.config.ClientSecret,
-		GrantType:    "refresh_token",
-		RefreshToken: refreshToken,
-	}
-
-	body, err := json.Marshal(payload)
-	if err != nil {
-		slog.Error("oauth(gh): failed to marshal payload while refreshing token", slog.Any("err", err))
-		return nil, err
-	}
-
-	refreshTokenURL := g.config.Endpoint.TokenURL
-
-	req, err := http.NewRequest("POST", refreshTokenURL, bytes.NewReader(body))
-	if err != nil {
-		slog.Error("oauth(gh): failed to create request while refreshing token", slog.Any("err", err))
-		return nil, err
-	}
-
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := g.client.Do(req)
-	if err != nil {
-		slog.Error("oauth(gh): failed to do request while refreshing token", slog.Any("err", err))
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		slog.Error("oauth(gh): non-200 status code while refreshing token", slog.Any("status", resp.StatusCode))
-		return nil, errors.New("error refreshing token")
-	}
-
-	defer resp.Body.Close()
-
-	var response struct {
-		AccessToken           string `json:"access_token"`
-		ExpiresIn             int    `json:"expires_in"`
-		RefreshToken          string `json:"refresh_token"`
-		RefreshTokenExpiresIn int    `json:"refresh_token_expires_in"`
-		Scope                 string `json:"scope"`
-		TokenType             string `json:"token_type"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		slog.Error("oauth(gh): failed to decode response while refreshing token", slog.Any("err", err))
-		return nil, err
-	}
-
-	if response.AccessToken == "" {
-		slog.Error("oauth(gh): no access token while refreshing token", slog.Any("response", response))
-		return nil, errors.New("no access token")
-	}
-
-	return &oauth2.Token{
-		AccessToken: response.AccessToken,
-		// Since Github only gives the seconds until expiry, subtracting ~10
-		// second from the expiry.  This is to account for any latency between
-		//Runner and Github.
-		// Note: This is weird.
-		Expiry:       time.Now().Add(time.Duration(response.ExpiresIn-10) * time.Second),
-		RefreshToken: response.RefreshToken,
-		TokenType:    response.TokenType,
-	}, nil
+func (g *Github) RefreshToken(ctx context.Context, refreshToken string) (*oauth2.Token, error) {
+	token := new(oauth2.Token)
+	token.RefreshToken = refreshToken
+	token.Expiry = time.Now()
+	return g.config.TokenSource(ctx, token).Token()
 }
 
 func (g *Github) GetUser(ctx context.Context, token *oauth2.Token) (*model.User, error) {

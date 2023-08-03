@@ -58,8 +58,8 @@ func GetAuthentiacator(ctx context.Context, c *config.Config) (*auth.Facade, err
 func createOAuthApps(c *config.Config) map[string]*oauth.App {
 	apps := make(map[string]*oauth.App)
 	for _, v := range c.Apps {
-		switch v.Provider { // skipcq: CRT-A0014
-		case "github":
+		switch v.Provider {
+		case oauth.ProviderGithub:
 			apps[v.ID] = &oauth.App{
 				ID:           v.ID,
 				ClientID:     v.Github.ClientID,
@@ -67,6 +67,15 @@ func createOAuthApps(c *config.Config) map[string]*oauth.App {
 				AuthHost:     v.Github.Host,
 				APIHost:      v.Github.APIHost,
 				Provider:     oauth.ProviderGithub,
+				RedirectURL:  *c.Runner.Host.JoinPath(oauth.CallbackURL(v.ID)),
+			}
+		case oauth.ProviderGitlab:
+			apps[v.ID] = &oauth.App{
+				ClientID:     v.Gitlab.AppID,
+				ClientSecret: v.Gitlab.Secret,
+				Provider:     oauth.ProviderGitlab,
+				AuthHost:     v.Gitlab.Host,
+				APIHost:      v.Gitlab.Host,
 				RedirectURL:  *c.Runner.Host.JoinPath(oauth.CallbackURL(v.ID)),
 			}
 		}

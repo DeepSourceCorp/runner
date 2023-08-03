@@ -9,4 +9,5 @@ type App struct {
 	Name     string  `yaml:"name"`
 	Provider string  `yaml:"provider"`
 	Github   *Github `yaml:"github"`
+	Gitlab   *Gitlab `yaml:"gitlab"`
 }

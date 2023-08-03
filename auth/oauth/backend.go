@@ -31,8 +31,11 @@ func (f *Factory) GetBackend(appID string) (IBackend, error) {
 		return nil, fmt.Errorf("no configuration found for app %s", appID)
 	}
 	switch app.Provider { // skipcq: CRT-A0014
-	case "github":
+	case ProviderGithub:
 		return NewGithub(app)
+	case ProviderGitlab:
+		return NewGitlab(app)
 	}
+
 	return nil, fmt.Errorf("unknown provider %s", app.Provider)
 }
