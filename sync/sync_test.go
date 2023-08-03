@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/deepsourcecorp/runner/auth/jwtutil"
+	"github.com/deepsourcecorp/runner/auth/cryptutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -55,7 +55,7 @@ func TestSyncer_Sync(t *testing.T) {
 	}
 
 	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
-	signer := jwtutil.NewSigner(privateKey)
+	signer := cryptutil.NewSigner(privateKey)
 
 	syncer := New(deepsource, runner, apps, signer, nil)
 	err := syncer.Sync()

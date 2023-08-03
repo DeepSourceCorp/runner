@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/deepsourcecorp/runner/auth/jwtutil"
+	"github.com/deepsourcecorp/runner/auth/cryptutil"
 	"github.com/deepsourcecorp/runner/auth/model"
 	"github.com/deepsourcecorp/runner/auth/oauth"
 	"github.com/deepsourcecorp/runner/auth/saml"
@@ -53,12 +53,12 @@ func New(ctx context.Context, opts *Opts, client *http.Client) (*Facade, error) 
 		client = http.DefaultClient
 	}
 
-	deepsourceVerifier := jwtutil.NewVerifier(opts.DeepSource.PublicKey)
+	deepsourceVerifier := cryptutil.NewVerifier(opts.DeepSource.PublicKey)
 	tokenMiddleware := DeepSourceTokenMiddleware(opts.Runner.ID, deepsourceVerifier)
 
 	// Initialize token service and handlers
-	runnerSigner := jwtutil.NewSigner(opts.Runner.PrivateKey)
-	runnerVerifier := jwtutil.NewVerifier(&opts.Runner.PrivateKey.PublicKey)
+	runnerSigner := cryptutil.NewSigner(opts.Runner.PrivateKey)
+	runnerVerifier := cryptutil.NewVerifier(&opts.Runner.PrivateKey.PublicKey)
 	tokenService := token.NewService(runnerSigner, runnerVerifier)
 	tokenHandlers := token.NewHandler(opts.Runner, tokenService)
 	sessionMiddleware := token.SessionAuthMiddleware(opts.Runner.ID, tokenService)
@@ -111,7 +111,7 @@ func (f *Facade) AddRoutes(r Router) Router {
 
 var ErrInvalidToken = httperror.Error{Message: "invalid token"}
 
-func DeepSourceTokenMiddleware(runnerID string, verifier *jwtutil.Verifier) echo.MiddlewareFunc {
+func DeepSourceTokenMiddleware(runnerID string, verifier *cryptutil.Verifier) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authrorization := c.Request().Header.Get("Authorization")

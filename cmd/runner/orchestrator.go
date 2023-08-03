@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deepsourcecorp/runner/auth/jwtutil"
+	"github.com/deepsourcecorp/runner/auth/cryptutil"
 	"github.com/deepsourcecorp/runner/config"
 	"github.com/deepsourcecorp/runner/orchestrator"
 )
@@ -21,7 +21,7 @@ func GetOrchestrator(ctx context.Context, c *config.Config, provider orchestrato
 		return nil, fmt.Errorf("error initializing orchestrator: %w", err)
 	}
 
-	signer := jwtutil.NewSigner(c.Runner.PrivateKey)
+	signer := cryptutil.NewSigner(c.Runner.PrivateKey)
 
 	if c.Kubernetes == nil {
 		return nil, errors.New("error initializing orchestrator: kubernetes config is empty")

@@ -6,7 +6,7 @@ import (
 
 	"time"
 
-	"github.com/deepsourcecorp/runner/auth/jwtutil"
+	"github.com/deepsourcecorp/runner/auth/cryptutil"
 	"github.com/deepsourcecorp/runner/auth/model"
 )
 
@@ -22,11 +22,11 @@ var (
 )
 
 type Service struct {
-	signer   *jwtutil.Signer
-	verifier *jwtutil.Verifier
+	signer   *cryptutil.Signer
+	verifier *cryptutil.Verifier
 }
 
-func NewService(signer *jwtutil.Signer, verifier *jwtutil.Verifier) *Service {
+func NewService(signer *cryptutil.Signer, verifier *cryptutil.Verifier) *Service {
 	return &Service{
 		signer:   signer,
 		verifier: verifier,

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deepsourcecorp/runner/auth/jwtutil"
+	"github.com/deepsourcecorp/runner/auth/cryptutil"
 	"github.com/deepsourcecorp/runner/auth/model"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -17,8 +17,8 @@ import (
 
 func TestSessionAuthMiddleware(t *testing.T) {
 	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
-	signer := jwtutil.NewSigner(privateKey)
-	verifier := jwtutil.NewVerifier(&privateKey.PublicKey)
+	signer := cryptutil.NewSigner(privateKey)
+	verifier := cryptutil.NewVerifier(&privateKey.PublicKey)
 	service := NewService(signer, verifier)
 	middleware := SessionAuthMiddleware("runner-id", service)
 

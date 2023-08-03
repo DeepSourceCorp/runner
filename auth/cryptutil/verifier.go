@@ -1,4 +1,4 @@
-package jwtutil
+package cryptutil
 
 import (
 	"crypto/rsa"

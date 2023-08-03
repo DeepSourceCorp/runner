@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/deepsourcecorp/runner/auth/jwtutil"
+	"github.com/deepsourcecorp/runner/auth/cryptutil"
 	"github.com/deepsourcecorp/runner/config"
 	"github.com/deepsourcecorp/runner/sync"
 )
@@ -34,6 +34,6 @@ func GetSyncer(_ context.Context, c *config.Config, client *http.Client) *sync.S
 		})
 	}
 
-	signer := jwtutil.NewSigner(c.Runner.PrivateKey)
+	signer := cryptutil.NewSigner(c.Runner.PrivateKey)
 	return sync.New(deepsource, runner, apps, signer, client)
 }
