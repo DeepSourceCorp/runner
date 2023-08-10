@@ -13,6 +13,8 @@ import (
 
 var (
 	GithubURLAccessTokenFmt = "/app/installations/%s/access_tokens"
+
+	ErrAppNotFound = fmt.Errorf("app not found")
 )
 
 const (

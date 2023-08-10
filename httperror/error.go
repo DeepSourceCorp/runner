@@ -29,8 +29,8 @@ var (
 		return New(http.StatusBadRequest, "mandatory parameters are missing or invalid", err)
 	}
 
-	ErrAppInvalid = func() *Error {
-		return New(http.StatusNotFound, "invalid app or credentials", nil)
+	ErrAppInvalid = func(err error) *Error {
+		return New(http.StatusNotFound, "invalid app or credentials", err)
 	}
 
 	ErrAppUnsupported = func(err error) *Error {
@@ -43,5 +43,9 @@ var (
 
 	ErrBadRequest = func(err error) *Error {
 		return New(http.StatusBadRequest, "bad request", err)
+	}
+
+	ErrUpstreamFailed = func(err error) *Error {
+		return New(http.StatusBadGateway, "failed to proxy request", err)
 	}
 )

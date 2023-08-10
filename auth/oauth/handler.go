@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -24,6 +25,8 @@ type Handler struct {
 
 	tokenService *token.Service
 }
+
+var ErrInvalidClientCredentials = errors.New("invalid client credentials")
 
 func NewHandler(runner *model.Runner, deepsource *model.DeepSource, store store.Store, tokenService *token.Service, factory *Factory) *Handler {
 	return &Handler{
@@ -55,7 +58,7 @@ func (h *Handler) HandleAuthorize(c echo.Context) error {
 
 	if !h.runner.IsValidClientID(req.ClientID) {
 		slog.Warn("authorization request with invalid client id", slog.Any("client_id", req.ClientID))
-		return httperror.ErrAppInvalid()
+		return httperror.ErrAppInvalid(errors.New("invalid client id"))
 	}
 
 	// Generate the authroization URL for the upstream identity provider and
@@ -201,7 +204,7 @@ func (h *Handler) HandleToken(c echo.Context) error {
 	}
 	if !h.runner.IsValidClientID(req.ClientID) || !h.runner.IsValidClientSecret(req.ClientSecret) {
 		slog.Warn("token request with invalid client credentials", slog.Any("client_id", req.ClientID))
-		return httperror.ErrAppInvalid()
+		return httperror.ErrAppInvalid(ErrInvalidClientCredentials)
 	}
 
 	user, err := h.store.VerifyAccessCode(req.Code)
@@ -295,7 +298,7 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 
 	if !(h.runner.IsValidClientID(req.ClientID) || !h.runner.IsValidClientSecret(req.ClientSecret)) {
 		slog.Warn("refresh request with invalid client credentials", slog.Any("client_id", req.ClientID))
-		return httperror.ErrAppInvalid()
+		return httperror.ErrAppInvalid(ErrInvalidClientCredentials)
 	}
 
 	user, err := h.tokenService.ReadToken(h.runner.ID, token.ScopeRefresh, req.RefreshToken)
