@@ -35,7 +35,7 @@ type Opts struct {
 	Storage       storage.StorageClient
 }
 
-func New(ctx context.Context, opts *Opts) (*Facade, error) {
+func New(_ context.Context, opts *Opts) (*Facade, error) {
 	if opts == nil || opts.Storage == nil {
 		return nil, ErrMissingOpts
 	}
