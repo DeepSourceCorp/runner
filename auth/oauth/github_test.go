@@ -2,65 +2,220 @@ package oauth
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/oauth2"
 )
 
-func TestGithub_GetToken(t *testing.T) {
-	clientID := "client_id_1"
-	clientSecret := "client_secret_1"
-	code := "code_1"
-	appID := "app_id_1"
+func TestGithub_AuthorizationURL(t *testing.T) {
+	clientID := "client-id"
+	clientSecret := "client-secret"
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
-		if err != nil {
-			t.Fatal(err)
-			return
-		}
-		if r.Header.Get("Authorization") != "Basic "+base64.StdEncoding.EncodeToString([]byte(clientID+":"+clientSecret)) {
-			t.Error("Github.GetToken() failed, expected Authorization header to be 'Basic base64(clientID:clientSecret)'")
-			return
-		}
-		if r.FormValue("code") != code {
-			t.Error("Github.GetToken() failed, expected code to be 'code_1'")
-			return
-		}
-		if !strings.HasSuffix(r.FormValue("redirect_uri"), "/apps/app_id_1/oauth2/callback") {
-			t.Error("Github.GetToken() failed, expected redirect_uri to be '/apps/app_id_1/oauth2/callback', got", r.FormValue("redirect_uri"))
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"access_token":"token","token_type":"bearer","scope":"repo,gist"}`))
-	}))
-	defer server.Close()
-	serverURL, _ := url.Parse(server.URL)
-	redirectURL, _ := url.Parse("http://localhost:8080/apps/app_id_1/oauth2/callback")
+	host, _ := url.Parse("https://github.com")
+	redirect, _ := url.Parse("http://example.com/apps/app2/auth/callback")
+
 	app := &App{
-		ID:           appID,
-		AuthHost:     *serverURL,
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
-		RedirectURL:  *redirectURL,
+		AuthHost:     *host,
+		RedirectURL:  *redirect,
 	}
+
 	github, err := NewGithub(app)
-	if err != nil {
-		t.Fatal(err)
-		return
+	assert.NoError(t, err)
+
+	authroization := github.AuthorizationURL("state", []string{})
+
+	u, _ := url.Parse(authroization)
+	q := u.Query()
+	assert.Equal(t, clientID, q.Get("client_id"))
+	assert.Equal(t, "state", q.Get("state"))
+	assert.Equal(t, "read:user user:email", q.Get("scope"))
+	assert.Equal(t, "code", q.Get("response_type"))
+	assert.Equal(t, redirect.String(), q.Get("redirect_uri"))
+}
+
+func TestGithub_GetToken(t *testing.T) {
+	clientID := "client-id"
+	clientSecret := "client-secret"
+
+	code := "code"
+	redirect, _ := url.Parse("http://localhost:8080/apps/app2/auth/callback")
+
+	body := []byte(`{
+		"access_token": "XXXXXXXXXXXXXXXXXXXX",
+		"token_type": "bearer",
+		"expires_in": 7200,
+		"refresh_token": "XXXXXXXXXXXXXXXXXXXX",
+		"created_at": 1607635748
+	   }`)
+
+	expected := &oauth2.Token{}
+	_ = json.Unmarshal(body, expected)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		err := r.ParseForm()
+		assert.NoError(t, err)
+		assert.Equal(t, "authorization_code", r.Form.Get("grant_type"))
+		assert.Equal(t, clientID, r.Form.Get("client_id"))
+		assert.Equal(t, clientSecret, r.Form.Get("client_secret"))
+		assert.Equal(t, code, r.Form.Get("code"))
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(body)
+	}))
+
+	host, _ := url.Parse(server.URL)
+
+	app := &App{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		AuthHost:     *host,
+		RedirectURL:  *redirect,
 	}
+
+	github, err := NewGithub(app)
+	assert.NoError(t, err)
 
 	token, err := github.GetToken(context.Background(), code)
-	if err != nil {
-		t.Fatal(err)
-		return
+	assert.NoError(t, err)
+	assert.Equal(t, expected.AccessToken, token.AccessToken)
+	assert.Equal(t, expected.RefreshToken, token.RefreshToken)
+	assert.Equal(t, expected.TokenType, token.TokenType)
+}
+
+func TestGithub_RefreshToken(t *testing.T) {
+	clientID := "client-id"
+	clientSecret := "client-secret"
+
+	refreshToken := "refresh-token"
+	redirect, _ := url.Parse("http://localhost:8080/apps/app2/auth/callback")
+
+	body := []byte(`{
+		"access_token": "XXXXXXXXXXXXXXXXXXXX",
+		"token_type": "bearer",
+		"expires_in": 7200,
+		"refresh_token": "XXXXXXXXXXXXXXXXXXXX",
+		"created_at": 1607635748
+	   }`)
+
+	expected := &oauth2.Token{}
+	_ = json.Unmarshal(body, expected)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		err := r.ParseForm()
+		assert.NoError(t, err)
+		assert.Equal(t, "refresh_token", r.Form.Get("grant_type"))
+		assert.Equal(t, clientID, r.Form.Get("client_id"))
+		assert.Equal(t, clientSecret, r.Form.Get("client_secret"))
+		assert.Equal(t, refreshToken, r.Form.Get("refresh_token"))
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(body)
+	}))
+
+	_ = server
+
+	host, _ := url.Parse(server.URL)
+
+	app := &App{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		AuthHost:     *host,
+		RedirectURL:  *redirect,
 	}
 
-	if token.AccessToken != "token" {
-		t.Error("Github.GetToken() failed, expected token to be 'token'")
-		return
+	github, err := NewGithub(app)
+	assert.NoError(t, err)
+
+	token, err := github.RefreshToken(context.Background(), refreshToken)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected.AccessToken, token.AccessToken)
+	assert.Equal(t, expected.RefreshToken, token.RefreshToken)
+	assert.Equal(t, expected.TokenType, token.TokenType)
+}
+
+func TestGithub_GetUser(t *testing.T) {
+	response := GithubUserResponse{
+		Login: "login",
+		Email: "email",
+		Name:  "name",
+		ID:    1,
 	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+
+	host, _ := url.Parse(server.URL)
+
+	github := &Github{
+		apiHost: *host,
+		client:  http.DefaultClient,
+	}
+
+	token := &oauth2.Token{
+		AccessToken: "access-token",
+	}
+
+	user, err := github.GetUser(context.Background(), token)
+	assert.NoError(t, err)
+
+	assert.Equal(t, response.Login, user.Login)
+	assert.Equal(t, response.Email, user.Email)
+	assert.Equal(t, response.Name, user.Name)
+	assert.Equal(t, fmt.Sprintf("%d", response.ID), user.ID)
+}
+
+func TestGithub_GetUserEmails(t *testing.T) {
+	response := []GithubEmail{
+		{
+			Email:    "email1",
+			Verified: false,
+			Primary:  false,
+		},
+		{
+			Email:    "email2",
+			Verified: true,
+			Primary:  true,
+		},
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+
+	host, _ := url.Parse(server.URL)
+
+	github := &Github{
+		apiHost: *host,
+		client:  http.DefaultClient,
+	}
+
+	token := &oauth2.Token{
+		AccessToken: "access-token",
+	}
+
+	primary, err := github.getPrimaryEmail(context.Background(), token)
+	assert.NoError(t, err)
+
+	assert.Equal(t, response[1].Email, primary)
+
 }

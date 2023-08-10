@@ -9,10 +9,11 @@ import (
 )
 
 func RunnerHTTPErrorHandler(err error, c echo.Context) {
-	code := http.StatusInternalServerError
-	if he, ok := err.(*httperror.Error); ok {
-		code = he.Code
-	}
 	sentry.CaptureException(err)
-	c.JSON(code, echo.HTTPError{Message: err.Error()})
+	switch typedErr := err.(type) {
+	case *httperror.Error:
+		_ = c.JSON(typedErr.Code, typedErr)
+	default:
+		_ = c.JSON(http.StatusInternalServerError, httperror.ErrUnknown(err))
+	}
 }
