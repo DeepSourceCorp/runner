@@ -2,10 +2,11 @@ package orchestrator
 
 import (
 	"log"
-	"net/http"
 
 	artifact "github.com/DeepSourceCorp/artifacts/types"
+	"github.com/deepsourcecorp/runner/httperror"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/exp/slog"
 )
 
 type Handler struct {
@@ -37,8 +38,8 @@ func (h *Handler) HandleAnalysis(c echo.Context) error {
 	ctx := c.Request().Context()
 	run := new(artifact.AnalysisRun)
 	if err := c.Bind(&run); err != nil {
-		log.Println(err)
-		return c.HTML(http.StatusBadRequest, err.Error())
+		slog.Error("analysis task bind error", slog.Any("err", err))
+		return httperror.ErrMissingParams(err)
 	}
 	log.Println("Running analysis task")
 	if err := h.analysisTask.Run(ctx, &AnalysisRunRequest{
@@ -46,8 +47,8 @@ func (h *Handler) HandleAnalysis(c echo.Context) error {
 		AppID:          c.Param("app_id"),
 		InstallationID: c.Request().Header.Get("X-Installation-ID"),
 	}); err != nil {
-		log.Println(err)
-		return c.HTML(http.StatusInternalServerError, err.Error())
+		slog.Error("analysis task run error", slog.Any("err", err))
+		return httperror.ErrUnknown(err)
 	}
 	return nil
 }
@@ -56,14 +57,16 @@ func (h *Handler) HandleAutofix(c echo.Context) error {
 	ctx := c.Request().Context()
 	run := new(artifact.AutofixRun)
 	if err := c.Bind(&run); err != nil {
-		return c.HTML(http.StatusBadRequest, err.Error())
+		slog.Error("autofix task bind error", slog.Any("err", err))
+		return httperror.ErrMissingParams(err)
 	}
 	if err := h.autofixTask.Run(ctx, &AutofixRunRequest{
 		Run:            run,
 		AppID:          c.Param("app_id"),
 		InstallationID: c.Request().Header.Get("X-Installation-ID"),
 	}); err != nil {
-		return c.HTML(http.StatusInternalServerError, err.Error())
+		slog.Error("autofix task run error", slog.Any("err", err))
+		return httperror.ErrUnknown(err)
 	}
 	return nil
 }
@@ -72,14 +75,16 @@ func (h *Handler) HandleTransformer(c echo.Context) error {
 	ctx := c.Request().Context()
 	run := new(artifact.TransformerRun)
 	if err := c.Bind(&run); err != nil {
-		return c.HTML(http.StatusBadRequest, err.Error())
+		slog.Error("transformer task bind error", slog.Any("err", err))
+		return httperror.ErrMissingParams(err)
 	}
 	if err := h.transformerTask.Run(ctx, &TransformerRunRequest{
 		Run:            run,
 		AppID:          c.Param("app_id"),
 		InstallationID: c.Request().Header.Get("X-Installation-ID"),
 	}); err != nil {
-		return c.HTML(http.StatusInternalServerError, err.Error())
+		slog.Error("transformer task run error", slog.Any("err", err))
+		return httperror.ErrUnknown(err)
 	}
 	return nil
 }
@@ -89,10 +94,12 @@ func (h *Handler) HandleCancelCheck(c echo.Context) error {
 	ctx := c.Request().Context()
 	req := new(artifact.CancelCheckRun)
 	if err := c.Bind(&req); err != nil {
-		return c.HTML(http.StatusBadRequest, err.Error())
+		slog.Error("cancel check task bind error", slog.Any("err", err))
+		return httperror.ErrMissingParams(err)
 	}
 	if err := h.cancelCheckTask.Run(ctx, req); err != nil {
-		return c.HTML(http.StatusInternalServerError, err.Error())
+		slog.Error("cancel check task run error", slog.Any("err", err))
+		return httperror.ErrUnknown(err)
 	}
 	return nil
 }
@@ -102,7 +109,8 @@ func (h *Handler) HandlePatcher(c echo.Context) error {
 	ctx := c.Request().Context()
 	req := new(artifact.PatcherRun)
 	if err := c.Bind(&req); err != nil {
-		return c.HTML(http.StatusBadRequest, err.Error())
+		slog.Error("patcher task bind error", slog.Any("err", err))
+		return httperror.ErrMissingParams(err)
 	}
 
 	if err := h.patcherTask.Run(ctx, &PatcherRunRequest{
@@ -110,7 +118,8 @@ func (h *Handler) HandlePatcher(c echo.Context) error {
 		AppID:          c.Param("app_id"),
 		InstallationID: c.Request().Header.Get("X-Installation-ID"),
 	}); err != nil {
-		return c.HTML(http.StatusInternalServerError, err.Error())
+		slog.Error("patcher task run error", slog.Any("err", err))
+		return httperror.ErrUnknown(err)
 	}
 	return nil
 }
