@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -78,7 +77,7 @@ func (s *Server) Router() (*Router, error) {
 		Routes: []Route{
 			{
 				Method: http.MethodGet, Path: "/readyz", HandlerFunc: func(c echo.Context) error {
-					return errors.New("text")
+					return c.NoContent(http.StatusOK)
 				},
 			},
 			{
