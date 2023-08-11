@@ -23,15 +23,31 @@ func (k *Kubernetes) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	imageRegistry := ImageRegistry{}
-	err := imageRegistry.ParseFromEnv()
-	if err != nil {
-		return err
+	if v.Namespace == "" {
+		v.Namespace = os.Getenv("TASK_NAMESPACE")
+	}
+
+	if v.NodeSelector == nil {
+		ns := os.Getenv("TASK_NODE_SELECTOR")
+		v.NodeSelector = make(map[string]string)
+		err := yaml.Unmarshal([]byte(ns), &v.NodeSelector)
+		if err != nil {
+			return err
+		}
+	}
+
+	if v.ImageRegistry == nil {
+		imageRegistry := &ImageRegistry{}
+		err := imageRegistry.ParseFromEnv()
+		if err != nil {
+			return err
+		}
+		v.ImageRegistry = imageRegistry
 	}
 
 	k.Namespace = v.Namespace
 	k.NodeSelector = v.NodeSelector
-	k.ImageRegistry = &imageRegistry
+	k.ImageRegistry = v.ImageRegistry
 	return nil
 }
 
