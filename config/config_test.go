@@ -62,7 +62,7 @@ deepsource:
     -----END PUBLIC KEY-----
 apps:
   - name: "app-1"
-    provider: "github"  
+    provider: "github"
     github:
       appId: "app-id"
       clientId: "client-id"

@@ -21,9 +21,7 @@ type Router interface {
 	AddRoute(method string, path string, handlerFunc echo.HandlerFunc, middleware ...echo.MiddlewareFunc)
 }
 
-var (
-	ErrMissingOpts = errors.New("missing required options")
-)
+var ErrMissingOpts = errors.New("missing required options")
 
 type Facade struct {
 	ArtifactHandler *Handler
