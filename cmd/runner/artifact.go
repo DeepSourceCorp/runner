@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/DeepSourceCorp/artifacts/storage"
 	"github.com/deepsourcecorp/runner/artifact"
 	"github.com/deepsourcecorp/runner/config"
-	"github.com/deepsourcelabs/artifacts/storage"
 )
 
 func GetArtifacts(ctx context.Context, c *config.Config) (*artifact.Facade, error) {
-	storage, err := storage.NewStorageClient(ctx, c.ObjectStorage.Backend, []byte(c.ObjectStorage.Credential))
+	storage, err := storage.NewStorageClient(ctx, c.ObjectStorage.Provider, []byte(c.ObjectStorage.Credential))
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize artifacts: %w", err)
 	}

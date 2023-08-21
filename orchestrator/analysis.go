@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	artifact "github.com/deepsourcelabs/artifacts/types"
+	artifact "github.com/DeepSourceCorp/artifacts/types"
 	"golang.org/x/exp/slog"
 )
 

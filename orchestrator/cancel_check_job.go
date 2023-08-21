@@ -1,7 +1,7 @@
 package orchestrator
 
 import (
-	artifact "github.com/deepsourcelabs/artifacts/types"
+	artifact "github.com/DeepSourceCorp/artifacts/types"
 )
 
 // The prefix of the job to be cancelled.

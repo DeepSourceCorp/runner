@@ -1,7 +1,7 @@
 package config
 
 type ObjectStorage struct {
-	Backend    string `yaml:"backend"`
+	Provider   string `yaml:"provider"`
 	Bucket     string `yaml:"bucket"`
 	Credential string `yaml:"credential"`
 }

@@ -11,9 +11,7 @@ import (
 	"github.com/deepsourcecorp/runner/orchestrator"
 )
 
-var (
-	CleanerInterval = 30 * time.Minute
-)
+var CleanerInterval = 30 * time.Minute
 
 func GetOrchestrator(ctx context.Context, c *config.Config, provider orchestrator.Provider, driverType string) (*orchestrator.Facade, error) {
 	driver, err := createDriver(driverType)
@@ -36,7 +34,7 @@ func GetOrchestrator(ctx context.Context, c *config.Config, provider orchestrato
 
 	taskOpts := &orchestrator.TaskOpts{
 		RemoteHost:           c.DeepSource.Host.String(),
-		SnippetStorageType:   c.ObjectStorage.Backend,
+		SnippetStorageType:   c.ObjectStorage.Provider,
 		SnippetStorageBucket: c.ObjectStorage.Bucket,
 		KubernetesOpts:       kubernetesOpts,
 	}

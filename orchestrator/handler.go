@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	artifact "github.com/deepsourcelabs/artifacts/types"
+	artifact "github.com/DeepSourceCorp/artifacts/types"
 	"github.com/labstack/echo/v4"
 )
 

@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	github.com/DataDog/zstd v1.5.5
+	github.com/DeepSourceCorp/artifacts v0.0.0-20230818093025-ecc4c78cb8d6
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/deepsourcelabs/artifacts v0.0.0-20230529132110-507e13c2e958
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.0
@@ -21,20 +21,25 @@ require (
 )
 
 require (
-	github.com/DeepSourceCorp/artifacts v0.0.0-20230818093025-ecc4c78cb8d6 // indirect
 	github.com/beevik/etree v1.1.0 // indirect
 	github.com/crewjam/httperr v0.2.0 // indirect
-	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/getsentry/sentry-go v0.23.0 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/jonboulle/clockwork v0.2.2 // indirect
+	github.com/klauspost/compress v1.16.7 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
+	github.com/minio/md5-simd v1.1.2 // indirect
+	github.com/minio/minio-go/v7 v7.0.61 // indirect
+	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rs/xid v1.5.0 // indirect
 	github.com/russellhaering/goxmldsig v1.2.0 // indirect
-	github.com/streadway/amqp v1.1.0 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
+	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
 require (

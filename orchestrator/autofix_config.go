@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 
 	"github.com/DataDog/zstd"
-	artifact "github.com/deepsourcelabs/artifacts/types"
+	artifact "github.com/DeepSourceCorp/artifacts/types"
 	"github.com/pelletier/go-toml"
 )
 
