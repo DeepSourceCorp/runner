@@ -21,6 +21,7 @@ const (
 	EnvNamePublisherToken           = "RESULT_HTTP_TOKEN"
 	EnvNameResultTask               = "RESULT_RMQ_TASK"
 	EnvNameArtifactsCredentialsPath = "ARTIFACTS_CREDENTIALS_PATH"
+	EnvNameArtifactsSecretName      = "TASK_ANALYSIS_ARTIFACT_SECRET_NAME"
 
 	MarvinCmdCpy       = "cp /marvin/marvin /toolbox &&"
 	MarvinCmdBase      = "/toolbox/marvin"
