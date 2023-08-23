@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/DeepSourceCorp/artifacts/storage"
 	"github.com/deepsourcecorp/runner/middleware"
 
 	"github.com/labstack/echo/v4"
@@ -31,7 +32,7 @@ type Facade struct {
 type Opts struct {
 	AllowedOrigin string // For CORS
 	Bucket        string
-	Storage       StorageClient
+	Storage       storage.StorageClient
 }
 
 func New(ctx context.Context, opts *Opts) (*Facade, error) {

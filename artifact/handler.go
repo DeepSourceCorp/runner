@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/DeepSourceCorp/artifacts/storage"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slog"
 )
 
 type Handler struct {
-	storage StorageClient
+	storage storage.StorageClient
 	bucket  string
 }
 
-func NewHandler(storage StorageClient, bucket string) *Handler {
+func NewHandler(storage storage.StorageClient, bucket string) *Handler {
 	return &Handler{
 		storage: storage,
 		bucket:  bucket,
