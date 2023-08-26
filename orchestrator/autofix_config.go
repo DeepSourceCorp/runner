@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
-	"github.com/DataDog/zstd"
 	artifact "github.com/DeepSourceCorp/artifacts/types"
+	"github.com/klauspost/compress/zstd"
 	"github.com/pelletier/go-toml"
 )
 
@@ -37,8 +37,16 @@ func (c *AutofixConfig) Bytes() ([]byte, error) {
 	}
 
 	var compressed []byte
-	compressed, err := zstd.CompressLevel(compressed, buf.Bytes(), 15)
+	w, err := zstd.NewWriter(bytes.NewBuffer(compressed), zstd.WithEncoderLevel(zstd.SpeedBestCompression))
 	if err != nil {
+		return nil, err
+	}
+
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		return nil, err
+	}
+
+	if err := w.Close(); err != nil {
 		return nil, err
 	}
 
