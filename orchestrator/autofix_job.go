@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	artifact "github.com/deepsourcelabs/artifacts/types"
+	artifact "github.com/DeepSourceCorp/artifacts/types"
 )
 
 const (

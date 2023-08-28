@@ -3,7 +3,7 @@ package orchestrator
 import (
 	"bytes"
 
-	artifact "github.com/deepsourcelabs/artifacts/types"
+	artifact "github.com/DeepSourceCorp/artifacts/types"
 	"github.com/pelletier/go-toml"
 )
 

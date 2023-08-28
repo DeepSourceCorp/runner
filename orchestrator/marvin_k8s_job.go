@@ -1,6 +1,8 @@
 package orchestrator
 
 import (
+	"os"
+
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -139,7 +141,7 @@ func (j *MarvinK8sJob) volumes() []corev1.Volume {
 		Name: "credentialsdir",
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: "artifacts-credentials",
+				SecretName: os.Getenv(EnvNameArtifactsSecretName),
 			},
 		},
 	})

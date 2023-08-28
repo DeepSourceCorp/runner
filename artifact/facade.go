@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/DeepSourceCorp/artifacts/storage"
 	"github.com/deepsourcecorp/runner/middleware"
 
 	"github.com/labstack/echo/v4"
@@ -21,9 +22,7 @@ type Router interface {
 	AddRoute(method string, path string, handlerFunc echo.HandlerFunc, middleware ...echo.MiddlewareFunc)
 }
 
-var (
-	ErrMissingOpts = errors.New("missing required options")
-)
+var ErrMissingOpts = errors.New("missing required options")
 
 type Facade struct {
 	ArtifactHandler *Handler
@@ -33,7 +32,7 @@ type Facade struct {
 type Opts struct {
 	AllowedOrigin string // For CORS
 	Bucket        string
-	Storage       StorageClient
+	Storage       storage.StorageClient
 }
 
 func New(ctx context.Context, opts *Opts) (*Facade, error) {
