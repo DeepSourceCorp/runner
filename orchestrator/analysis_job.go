@@ -37,6 +37,8 @@ type AnalysisOpts struct {
 	SnippetStorageType   string
 	SnippetStorageBucket string
 
+	SentryDSN string
+
 	KubernetesOpts *KubernetesOpts
 }
 
@@ -138,6 +140,7 @@ func (j *AnalysisDriverJob) Container() *Container {
 			EnvNamePublisherToken:           j.opts.PublisherToken,
 			EnvNameResultTask:               AnalysisResultTask,
 			EnvNameArtifactsCredentialsPath: "/credentials/credentials",
+			EnvNameSentryDSN:                j.opts.SentryDSN,
 		},
 		VolumeMounts: VolumeMounts,
 	}
@@ -179,6 +182,7 @@ func (j *AnalysisDriverJob) InitContainer() *Container {
 			EnvNamePublisherToken:           j.opts.PublisherToken,
 			EnvNameArtifactsCredentialsPath: "/credentials/credentials",
 			EnvNameResultTask:               AnalysisResultTask,
+			EnvNameSentryDSN:                j.opts.SentryDSN,
 		},
 		VolumeMounts: VolumeMounts,
 	}

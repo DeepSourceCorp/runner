@@ -27,6 +27,8 @@ type AutofixOpts struct {
 	SnippetStorageType   string
 	SnippetStorageBucket string
 
+	SentryDSN string
+
 	KubernetesOpts *KubernetesOpts
 }
 
@@ -119,6 +121,7 @@ func (j *AutofixDriverJob) InitContainer() *Container {
 			EnvNamePublisherToken:           j.opts.PublisherToken,
 			EnvNameResultTask:               AutofixResultTask,
 			EnvNameArtifactsCredentialsPath: "/credentials/credentials",
+			EnvNameSentryDSN:                j.opts.SentryDSN,
 		},
 		VolumeMounts: VolumeMounts,
 	}
@@ -165,6 +168,7 @@ func (j *AutofixDriverJob) Container() *Container {
 			EnvNamePublisherToken:           j.opts.PublisherToken,
 			EnvNameResultTask:               AutofixResultTask,
 			EnvNameArtifactsCredentialsPath: "/credentials/credentials",
+			EnvNameSentryDSN:                j.opts.SentryDSN,
 		},
 		VolumeMounts: VolumeMounts,
 	}

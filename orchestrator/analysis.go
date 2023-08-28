@@ -83,6 +83,7 @@ func (t *AnalysisTask) Run(ctx context.Context, req *AnalysisRunRequest) error {
 				PublisherToken:       token,
 				SnippetStorageType:   t.opts.SnippetStorageType,
 				SnippetStorageBucket: t.opts.SnippetStorageBucket,
+				SentryDSN:            t.opts.SentryDSN,
 				KubernetesOpts:       t.opts.KubernetesOpts,
 			},
 		)

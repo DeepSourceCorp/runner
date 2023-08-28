@@ -36,6 +36,7 @@ func GetOrchestrator(_ context.Context, c *config.Config, provider orchestrator.
 		RemoteHost:           c.DeepSource.Host.String(),
 		SnippetStorageType:   c.ObjectStorage.Provider,
 		SnippetStorageBucket: c.ObjectStorage.Bucket,
+		SentryDSN:            c.Sentry.DSN,
 		KubernetesOpts:       kubernetesOpts,
 	}
 

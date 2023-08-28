@@ -52,6 +52,7 @@ func (t *TransformerTask) Run(ctx context.Context, req *TransformerRunRequest) e
 		&TransformerOpts{
 			PublisherURL:   t.opts.RemoteHost + transformerPublishPath,
 			PublisherToken: token,
+			SentryDSN:      t.opts.SentryDSN,
 			KubernetesOpts: t.opts.KubernetesOpts,
 		},
 	)

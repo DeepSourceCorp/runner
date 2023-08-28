@@ -32,6 +32,8 @@ type TaskOpts struct {
 	RemoteHost           string
 	SnippetStorageType   string
 	SnippetStorageBucket string
+	
+	SentryDSN            string
 
 	KubernetesOpts *KubernetesOpts
 }
