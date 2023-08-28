@@ -72,6 +72,7 @@ func main() {
 
 	err = Migrate(c.RQLite)
 	if err != nil {
+		sentry.CaptureException(err)
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
