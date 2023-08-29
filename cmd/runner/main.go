@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/deepsourcecorp/runner/config"
+	"github.com/getsentry/sentry-go"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slog"
 )
@@ -71,6 +72,7 @@ func main() {
 
 	err = Migrate(c.RQLite)
 	if err != nil {
+		sentry.CaptureException(err)
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
@@ -78,17 +80,21 @@ func main() {
 	syncer := GetSyncer(ctx, c, http.DefaultClient)
 	err = syncer.Sync()
 	if err != nil {
-		slog.Warn("failed to sync upstream", slog.Any("err", err))
+		sentry.CaptureException(err)
+		slog.Error("failed to sync upstream", slog.Any("err", err))
+		os.Exit(1)
 	}
 
 	r, err := s.Router()
 	if err != nil {
+		sentry.CaptureException(err)
 		slog.Error("failed to initialize router", slog.Any("err", err))
 		os.Exit(1)
 	}
 
 	auth, err := GetAuthentiacator(ctx, c)
 	if err != nil {
+		sentry.CaptureException(err)
 		slog.Error("failed to initialize authentication app", slog.Any("err", err))
 		os.Exit(1)
 	}
@@ -96,6 +102,7 @@ func main() {
 
 	provider, err := GetProvider(ctx, c, http.DefaultClient)
 	if err != nil {
+		sentry.CaptureException(err)
 		slog.Error("failed to initialize provider", slog.Any("err", err))
 		os.Exit(1)
 	}
@@ -103,6 +110,7 @@ func main() {
 
 	orchestrator, err := GetOrchestrator(ctx, c, provider.Adapter, Driver)
 	if err != nil {
+		sentry.CaptureException(err)
 		slog.Error("failed to initialize orchestrator", slog.Any("err", err))
 		os.Exit(1)
 	}
@@ -110,6 +118,7 @@ func main() {
 
 	artifacts, err := GetArtifacts(ctx, c)
 	if err != nil {
+		sentry.CaptureException(err)
 		slog.Error("failed to initialize artifacts app", slog.Any("err", err))
 		os.Exit(1)
 	}
@@ -120,6 +129,7 @@ func main() {
 	r.Setup()
 	err = s.Start()
 	if err != nil {
+		sentry.CaptureException(err)
 		slog.Error("failed to start server", slog.Any("err", err))
 		os.Exit(1)
 	}

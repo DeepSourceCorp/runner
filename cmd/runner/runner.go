@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/deepsourcecorp/runner/config"
+	"github.com/getsentry/sentry-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/exp/slog"
@@ -41,7 +42,15 @@ func NewServer(c *config.Config) *Server {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
-	// e.Use(middleware.Recover())
+	e.Use(middleware.Recover())
+	if c.Sentry != nil && c.Sentry.DSN != "" {
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn: c.Sentry.DSN,
+		}); err != nil {
+			slog.Error("failed to initialize sentry", slog.Any("err", err))
+		}
+		e.HTTPErrorHandler = RunnerHTTPErrorHandler
+	}
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "time=${time_rfc3339_nano} level=INFO method=${method}, uri=${uri}, status=${status}\n",
 	}))
@@ -67,7 +76,9 @@ func (s *Server) Router() (*Router, error) {
 		e: s.Echo,
 		Routes: []Route{
 			{
-				Method: http.MethodGet, Path: "/readyz", HandlerFunc: func(c echo.Context) error { return c.JSON(http.StatusOK, map[string]interface{}{"status": "ok"}) },
+				Method: http.MethodGet, Path: "/readyz", HandlerFunc: func(c echo.Context) error {
+					return c.NoContent(http.StatusOK)
+				},
 			},
 			{
 				Method: http.MethodOptions, Path: "/*", HandlerFunc: func(c echo.Context) error { return c.NoContent(http.StatusOK) }, Middleware: []echo.MiddlewareFunc{s.cors},

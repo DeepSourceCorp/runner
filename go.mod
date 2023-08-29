@@ -6,6 +6,7 @@ require (
 	github.com/DataDog/zstd v1.5.5
 	github.com/DeepSourceCorp/artifacts v0.0.0-20230823082625-b899aa7b55f8
 	github.com/Masterminds/squirrel v1.5.4
+	github.com/getsentry/sentry-go v0.22.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.1

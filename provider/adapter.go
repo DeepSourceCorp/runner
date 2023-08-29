@@ -2,16 +2,16 @@ package provider
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/deepsourcecorp/runner/httperror"
 	"github.com/deepsourcecorp/runner/provider/github"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/exp/slog"
 )
 
 var (
 	ErrNoVCS = httperror.Error{Message: "no VCS provider found for the given app ID"}
-	ErrNoApp = httperror.Error{Message: "no app found for the given app ID"}
+	ErrNoApp = &httperror.Error{Message: "no app found for the given app ID"}
 )
 
 // Adapter is a unified interface for all VCS providers.  We maintain a map
@@ -37,7 +37,8 @@ func NewAdapter(apps map[string]*App, githubProvider *github.Handler) *Adapter {
 func (a *Adapter) HandleAPI(c echo.Context) error {
 	provider, err := a.getProvider(c.Param("app_id"))
 	if err != nil {
-		return c.JSON(http.StatusNotFound, ErrNoVCS)
+		slog.Error("failed to get provider", slog.Any("err", err))
+		return httperror.ErrAppInvalid(err)
 	}
 	return provider.HandleAPI(c)
 }
@@ -46,7 +47,8 @@ func (a *Adapter) HandleAPI(c echo.Context) error {
 func (a *Adapter) HandleWebhook(c echo.Context) error {
 	provider, err := a.getProvider(c.Param("app_id"))
 	if err != nil {
-		return c.JSON(http.StatusNotFound, ErrNoVCS)
+		slog.Error("failed to get provider", slog.Any("err", err))
+		return httperror.ErrAppInvalid(err)
 	}
 	return provider.HandleWebhook(c)
 }
@@ -56,7 +58,8 @@ func (a *Adapter) HandleWebhook(c echo.Context) error {
 func (a *Adapter) HandleInstallation(c echo.Context) error {
 	provider, err := a.getProvider(c.Param("app_id"))
 	if err != nil {
-		return c.JSON(http.StatusNotFound, ErrNoVCS)
+		slog.Error("failed to get provider", slog.Any("err", err))
+		return httperror.ErrAppInvalid(err)
 	}
 	return provider.HandleInstallation(c)
 }

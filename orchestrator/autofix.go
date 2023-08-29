@@ -52,6 +52,7 @@ func (t *AutofixTask) Run(ctx context.Context, req *AutofixRunRequest) error {
 		PublisherToken:       token,
 		SnippetStorageType:   t.opts.SnippetStorageType,
 		SnippetStorageBucket: t.opts.SnippetStorageBucket,
+		SentryDSN:            t.opts.SentryDSN,
 		KubernetesOpts:       t.opts.KubernetesOpts,
 	})
 	if err != nil {

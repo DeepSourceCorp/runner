@@ -13,7 +13,7 @@ import (
 
 var CleanerInterval = 30 * time.Minute
 
-func GetOrchestrator(ctx context.Context, c *config.Config, provider orchestrator.Provider, driverType string) (*orchestrator.Facade, error) {
+func GetOrchestrator(_ context.Context, c *config.Config, provider orchestrator.Provider, driverType string) (*orchestrator.Facade, error) {
 	driver, err := createDriver(driverType)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing orchestrator: %w", err)
@@ -36,6 +36,7 @@ func GetOrchestrator(ctx context.Context, c *config.Config, provider orchestrato
 		RemoteHost:           c.DeepSource.Host.String(),
 		SnippetStorageType:   c.ObjectStorage.Provider,
 		SnippetStorageBucket: c.ObjectStorage.Bucket,
+		SentryDSN:            c.Sentry.DSN,
 		KubernetesOpts:       kubernetesOpts,
 	}
 

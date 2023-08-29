@@ -28,6 +28,8 @@ type PatcherJobOpts struct {
 	SnippetStorageType   string
 	SnippetStorageBucket string
 
+	SentryDSN string
+
 	KubernetesOpts *KubernetesOpts
 }
 
@@ -122,6 +124,7 @@ func (j *PatcherDriverJob) Container() *Container {
 			EnvNamePublisherURL:             j.opts.PublisherURL,
 			EnvNamePublisherToken:           j.opts.PublisherToken,
 			EnvNameResultTask:               PatcherResultTask,
+			EnvNameSentryDSN:                j.opts.SentryDSN,
 		},
 		VolumeMounts: VolumeMounts,
 	}

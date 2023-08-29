@@ -21,6 +21,8 @@ type TransformerOpts struct {
 	PublisherURL   string
 	PublisherToken string
 
+	SentryDSN string
+
 	KubernetesOpts *KubernetesOpts
 }
 
@@ -107,6 +109,7 @@ func (j *TransformerJob) InitContainer() *Container {
 			EnvNamePublisherToken:           j.opts.PublisherToken,
 			EnvNameResultTask:               TransformerResultTask,
 			EnvNameArtifactsCredentialsPath: "/credentials/credentials",
+			EnvNameSentryDSN:                j.opts.SentryDSN,
 		},
 		VolumeMounts: VolumeMounts,
 	}
@@ -149,6 +152,7 @@ func (j *TransformerJob) Container() *Container {
 			EnvNamePublisherURL:             j.opts.PublisherURL,
 			EnvNamePublisherToken:           j.opts.PublisherToken,
 			EnvNameResultTask:               TransformerResultTask,
+			EnvNameSentryDSN:                j.opts.SentryDSN,
 		},
 		VolumeMounts: VolumeMounts,
 	}

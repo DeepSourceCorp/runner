@@ -22,6 +22,7 @@ const (
 	EnvNameResultTask               = "RESULT_RMQ_TASK"
 	EnvNameArtifactsCredentialsPath = "ARTIFACTS_CREDENTIALS_PATH"
 	EnvNameArtifactsSecretName      = "TASK_ARTIFACT_SECRET_NAME"
+	EnvNameSentryDSN                = "SENTRY_DSN"
 
 	MarvinCmdCpy       = "cp /marvin/marvin /toolbox &&"
 	MarvinCmdBase      = "/toolbox/marvin"

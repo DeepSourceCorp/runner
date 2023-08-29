@@ -53,7 +53,7 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 	return c.Redirect(http.StatusTemporaryRedirect, referrer)
 }
 
-func (h *Handler) HandleLogout(c echo.Context) error {
+func (*Handler) HandleLogout(c echo.Context) error {
 	c.SetCookie(&http.Cookie{
 		Name:     "session",
 		Value:    "",

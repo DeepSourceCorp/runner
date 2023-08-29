@@ -58,6 +58,7 @@ func (p *PatcherTask) Run(ctx context.Context, req *PatcherRunRequest) error {
 		PublisherToken:       token,
 		SnippetStorageType:   p.opts.SnippetStorageType,
 		SnippetStorageBucket: p.opts.SnippetStorageBucket,
+		SentryDSN:            p.opts.SentryDSN,
 		KubernetesOpts:       p.opts.KubernetesOpts,
 	})
 	if err != nil {

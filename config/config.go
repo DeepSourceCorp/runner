@@ -15,6 +15,7 @@ type Config struct {
 	RQLite        *RQLite        `yaml:"rqlite"`
 	SAML          *SAML          `yaml:"saml"`
 	ObjectStorage *ObjectStorage `yaml:"objectStorage"`
+	Sentry        *Sentry        `yaml:"sentry"`
 }
 
 func LoadConfig(r io.Reader) (*Config, error) {
