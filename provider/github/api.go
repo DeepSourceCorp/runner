@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deepsourcecorp/runner/proxyutil"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/exp/slog"
 )
@@ -116,7 +117,7 @@ func (c *APIProxy) ProxyURL(path string) string {
 
 // Proxy proxies the request to the Github API after adding the required
 // authentication headers.
-func (c *APIProxy) Proxy(req *http.Request) (*http.Response, error) {
+func (c *APIProxy) Proxy(in *http.Request) (*http.Response, error) {
 	requestToken, err := c.GenerateJWT()
 	if err != nil {
 		return nil, err
@@ -125,12 +126,13 @@ func (c *APIProxy) Proxy(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	u := c.ProxyURL(req.URL.Path)
-	req, err = http.NewRequest(req.Method, u, req.Body)
+	targetURL := c.ProxyURL(in.URL.Path)
+	req, err := http.NewRequest(in.Method, targetURL, in.Body)
 	if err != nil {
 		return nil, err
 	}
 
+	proxyutil.CopyHeader(req.Header, in.Header)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 
 	return c.client.Do(req)
