@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deepsourcecorp/runner/proxyutils"
+	"github.com/deepsourcecorp/runner/proxyutil"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/exp/slog"
 )
@@ -132,7 +132,7 @@ func (c *APIProxy) Proxy(in *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	proxyutils.CopyHeader(req.Header, in.Header)
+	proxyutil.CopyHeader(req.Header, in.Header)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 
 	return c.client.Do(req)
