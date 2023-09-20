@@ -130,8 +130,8 @@ func (c *APIProxy) Proxy(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-	req.Header.Set("Accept", HeaderValueGithubAccept)
 
 	return c.client.Do(req)
 }
