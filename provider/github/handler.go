@@ -23,63 +23,62 @@ var (
 )
 
 type Handler struct {
-	apiProxyFactory     *APIProxyFactory
+	appFactory          *AppFactory
 	webhookProxyFactory *WebhookProxyFactory
+	httpClient          *http.Client
 }
 
-func NewHandler(apiF *APIProxyFactory, webhookF *WebhookProxyFactory) (*Handler, error) {
+func NewHandler(webhookF *WebhookProxyFactory, appFactory *AppFactory, httpClient *http.Client) (*Handler, error) {
 	return &Handler{
-		apiProxyFactory:     apiF,
+		appFactory:          appFactory,
 		webhookProxyFactory: webhookF,
 	}, nil
 }
 
-type APIRequest struct {
-	AppID          string
-	InstallationID string
-}
-
-// HandleAPI handles the API request from DeepSource Cloud to Github.
 func (h *Handler) HandleAPI(c echo.Context) error {
-	req := &APIRequest{
-		InstallationID: c.Request().Header.Get(HeaderInstallationID),
-		AppID:          c.Param("app_id"),
-	}
-
-	if req.InstallationID == "" || req.AppID == "" {
-		slog.Error("missing installation id or app id")
-		return httperror.ErrMissingParams(nil)
-	}
-
-	client, err := h.apiProxyFactory.NewProxy(req.AppID, req.InstallationID)
+	req, err := NewAPIRequest(c)
 	if err != nil {
-		slog.Error("failed to create api proxy", slog.Any("err", err))
-		return httperror.ErrBadRequest(err)
+		slog.Error("invalid request", slog.Any("err", err))
+		return httperror.ErrMissingParams(err)
 	}
 
-	proxyRes, err := client.Proxy(c.Request())
+	app := h.appFactory.GetApp(req.AppID)
+	if app == nil {
+		slog.Error("app not found", slog.Any("app_id", req.AppID))
+		return httperror.ErrAppInvalid(nil)
+	}
+
+	installationClient := NewInstallationClient(app, req.InstallationID, h.httpClient)
+
+	accessToken, err := installationClient.AccessToken()
+	if err != nil {
+		slog.Error("failed to generate access token", slog.Any("err", err))
+		return httperror.ErrUnknown(err)
+	}
+
+	targetResponse, err := installationClient.Proxy(c.Request(), accessToken)
 	if err != nil {
 		slog.Error("failed to proxy request", slog.Any("err", err))
 		return httperror.ErrUpstreamFailed(err)
 	}
 
-	slog.Debug(fmt.Sprintf("got response code %d from github", proxyRes.StatusCode))
+	defer targetResponse.Body.Close()
 
-	responseBody, err := io.ReadAll(proxyRes.Body)
+	slog.Info("got response code from github", slog.Any("status_code", targetResponse.StatusCode))
+
+	responseBody, err := io.ReadAll(targetResponse.Body)
 	if err != nil {
 		slog.Error("failed to read response body", slog.Any("err", err))
 		return httperror.ErrUnknown(err)
 	}
 
 	w := c.Response().Writer
-	w.WriteHeader(proxyRes.StatusCode)
+	w.WriteHeader(targetResponse.StatusCode)
 	if _, err := w.Write(responseBody); err != nil {
 		slog.Error("failed to write response body", slog.Any("err", err))
 		return httperror.ErrUnknown(err)
 	}
-
 	c.Response().Flush()
-
 	return nil
 }
 
@@ -155,27 +154,24 @@ func (h *Handler) HandleInstallation(c echo.Context) error {
 		slog.Error("failed to bind request", slog.Any("err", err))
 		return httperror.ErrMissingParams(err)
 	}
-	client, err := h.apiProxyFactory.NewProxy(req.AppID, "")
-	if err != nil {
-		slog.Error("failed to create api proxy", slog.Any("err", err))
-		return httperror.ErrBadRequest(err)
-	}
 
-	installationURL := client.InstallationURL()
-	return c.Redirect(http.StatusTemporaryRedirect, installationURL)
+	app := h.appFactory.GetApp(req.AppID)
+	if app == nil {
+		slog.Error("app not found", slog.Any("app_id", req.AppID))
+		return httperror.ErrAppInvalid(nil)
+	}
+	return c.Redirect(http.StatusTemporaryRedirect, app.InstallationURL())
 }
 
 func (h *Handler) AuthenticatedRemoteURL(appID, installationID string, srcURL string) (string, error) {
-	proxy, err := h.apiProxyFactory.NewProxy(appID, installationID)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate authenticated remote url: %w", err)
-	}
-	jwt, err := proxy.GenerateJWT()
-	if err != nil {
-		return "", fmt.Errorf("failed to generate authenticated remote url: %w", err)
+	app := h.appFactory.GetApp(appID)
+	if app == nil {
+		return "", ErrConfigNotFound
 	}
 
-	token, err := proxy.GenerateAccessToken(jwt)
+	installationClient := NewInstallationClient(app, installationID, h.httpClient)
+
+	token, err := installationClient.AccessToken()
 	if err != nil {
 		return "", fmt.Errorf("failed to generate authenticated remote url: %w", err)
 	}

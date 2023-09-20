@@ -24,10 +24,11 @@ func GetProvider(ctx context.Context, c *config.Config, client *http.Client) (*p
 		Host: c.DeepSource.Host,
 	}
 
-	apiFactory := github.NewAPIProxyFactory(githubApps, client)
+	appFactory := github.NewAppFactory(githubApps)
+
 	webhookFactory := github.NewWebhookProxyFactory(runner, deepsource, githubApps, client)
 
-	githubProvider, err := github.NewHandler(apiFactory, webhookFactory)
+	githubProvider, err := github.NewHandler(webhookFactory, appFactory, client)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing provider: %w", err)
 	}
