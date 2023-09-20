@@ -21,6 +21,8 @@ type App struct {
 	PrivateKey    *rsa.PrivateKey
 }
 
+// Generate a JWT token for the GitHub App.
+// (https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-json-web-token-jwt-for-a-github-app)
 func (a *App) JWT() (string, error) {
 	return jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"iat": jwt.TimeFunc().Add(-1 * time.Minute).Unix(),
@@ -29,6 +31,7 @@ func (a *App) JWT() (string, error) {
 	}).SignedString(a.PrivateKey)
 }
 
+// InstallationURL returns the URL to install the GitHub App.
 func (a *App) InstallationURL() string {
 	return a.BaseHost.JoinPath(fmt.Sprintf("/apps/%s/installations/new", a.AppSlug)).String()
 }
