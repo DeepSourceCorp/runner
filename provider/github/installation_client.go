@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
-
-	"github.com/deepsourcecorp/runner/proxyutil"
 )
 
 var (
@@ -74,26 +73,17 @@ func (c *InstallationClient) AccessToken() (string, error) {
 		return "", fmt.Errorf("failed to decode access token response: %w", err)
 	}
 
+	if accessTokenResponse.Token == "" {
+		return "", fmt.Errorf("access token not found in response")
+	}
+
 	return accessTokenResponse.Token, nil
 }
 
 // ProxyURL returns the URL to proxy the request.  When DeepSource Cloud sends a
 // request to GitHub via the Runner, it is prefixed with "/apps/:app_id/api".
 // This method strips this prefix and generates the actual GitHub API URL.
-func (c *InstallationClient) ProxyURL(path string) string {
+func (c *InstallationClient) ProxyURL(path string) *url.URL {
 	prefixToRemove := fmt.Sprintf("/apps/%s/api/", c.app.ID)
-	return c.app.APIHost.JoinPath(strings.TrimPrefix(path, prefixToRemove)).String()
-}
-
-func (c *InstallationClient) Proxy(in *http.Request, accessToken string) (*http.Response, error) {
-	targetURL := c.ProxyURL(in.URL.Path)
-	req, err := http.NewRequest(in.Method, targetURL, in.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	proxyutil.CopyHeader(req.Header, in.Header)
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-
-	return c.client.Do(req)
+	return c.app.APIHost.JoinPath(strings.TrimPrefix(path, prefixToRemove))
 }
