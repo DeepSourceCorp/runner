@@ -80,5 +80,5 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          args: IMAGE_TAG=${{ env.IMAGE_TAG }}
+          args: --build-arg IMAGE_TAG=${{ env.IMAGE_TAG }}
           tags: us.gcr.io/${{ env.REPO }}/runner:${{ env.IMAGE_TAG }}
