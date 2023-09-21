@@ -9,6 +9,7 @@ import (
 	"github.com/deepsourcecorp/runner/httperror"
 	"github.com/deepsourcecorp/runner/provider/model"
 	"github.com/deepsourcecorp/runner/proxyutil"
+	"golang.org/x/exp/slog"
 )
 
 type WebhookService struct {
@@ -67,6 +68,8 @@ func (s *WebhookService) Process(req *WebhookRequest) (*http.Response, error) {
 		Headers:   header,
 		Query:     nil,
 	})
+
+	slog.Info("Status code from DeepSource", slog.Int("status_code", res.StatusCode))
 
 	if err != nil {
 		err := fmt.Errorf("failed to proxy request: %w", err)

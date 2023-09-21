@@ -52,8 +52,7 @@ func (s *APIService) Process(req *APIRequest) (*http.Response, error) {
 		&proxyutil.ForwarderOpts{
 			TargetURL: *installationClient.ProxyURL(req.HTTPRequest.URL.Path),
 			Headers:   header,
-		},
-	)
+		})
 
 	slog.Info("Status code from GitHub", slog.Int("status_code", res.StatusCode))
 
