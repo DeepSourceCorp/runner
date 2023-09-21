@@ -76,6 +76,10 @@ func (*Handler) writeResponse(c echo.Context, res *http.Response) error {
 		return httperror.ErrUnknown(err)
 	}
 
+	fmt.Println("-------------------------------------------------------------")
+	fmt.Println(string(body))
+	fmt.Println("-------------------------------------------------------------")
+
 	c.Response().Writer.WriteHeader(res.StatusCode)
 	if _, err := c.Response().Writer.Write(body); err != nil {
 		slog.Error("failed to write response body", slog.Any("err", err))

@@ -45,6 +45,21 @@ func RemoveHopHeaders(h http.Header) {
 	}
 }
 
+func RemoveCloudflareHeaders(h http.Header) {
+	cloudflareHeaders := []string{
+		"CF-Connecting-IP",
+		"CF-IPCountry",
+		"CF-RAY",
+		"CF-Visitor",
+		"CF-Request-ID",
+		"CF-Worker",
+	}
+
+	for _, k := range cloudflareHeaders {
+		h.Del(k)
+	}
+}
+
 func CopyQueryParams(dst, src *http.Request) {
 	q := dst.URL.Query()
 	for k, v := range src.URL.Query() {
@@ -110,8 +125,10 @@ func (f *Forwarder) Forward(req *http.Request, extras *ForwarderOpts) (*http.Res
 	AppendQueryParams(out, extras.Query)
 
 	RemoveHopHeaders(out.Header)
+	RemoveCloudflareHeaders(out.Header)
 
 	x, _ := json.Marshal(out.Header)
+	fmt.Println("REQUEST URL", out.URL.String())
 	fmt.Println("REQUEST HEADERS: ", string(x))
 
 	return f.client.Do(out)
