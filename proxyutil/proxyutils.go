@@ -111,40 +111,8 @@ func (f *Forwarder) Forward(req *http.Request, extras *ForwarderOpts) (*http.Res
 
 	RemoveHopHeaders(out.Header)
 
-	fmt.Println("REQUEST BODY: ", string(body))
 	x, _ := json.Marshal(out.Header)
-	fmt.Println("REQUEST HEADERS: ", x)
+	fmt.Println("REQUEST HEADERS: ", string(x))
 
 	return f.client.Do(out)
 }
-
-// func Proxy(in *http.Request, opts *ProxyOpts, httpClient *http.Client) (*http.Response, error) {
-// 	defer in.Body.Close()
-// 	ctx := in.Context()
-
-// 	body, err := io.ReadAll(in.Body)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to read request body: %w", err)
-// 	}
-
-// 	out, err := http.NewRequestWithContext(
-// 		ctx,
-// 		in.Method,
-// 		opts.TargetURL.String(),
-// 		bytes.NewReader(body),
-// 	)
-
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to create target request: %w", err)
-// 	}
-
-// 	CopyHeader(out.Header, in.Header)
-// 	AppendHeaders(out, opts.Headers)
-
-// 	CopyQueryParams(out, in)
-// 	AppendQueryParams(out, opts.Query)
-
-// 	RemoveHopHeaders(out.Header)
-
-// 	return httpClient.Do(out)
-// }
