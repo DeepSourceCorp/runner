@@ -3,13 +3,13 @@ module github.com/deepsourcecorp/runner
 go 1.20
 
 require (
-	github.com/DataDog/zstd v1.5.5
 	github.com/DeepSourceCorp/artifacts v0.0.0-20230823082625-b899aa7b55f8
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/getsentry/sentry-go v0.22.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.3.0
+	github.com/klauspost/compress v1.16.7
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/pelletier/go-toml v1.9.5
 	github.com/segmentio/ksuid v1.0.4
@@ -27,7 +27,6 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/s2a-go v0.1.5 // indirect
 	github.com/jonboulle/clockwork v0.2.2 // indirect
-	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect

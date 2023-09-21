@@ -59,7 +59,9 @@ func New(deepsource *DeepSource, runner *Runner, apps []App, signer Signer, clie
 
 func (s *Syncer) Sync() error {
 	payload := &Payload{
+		RunnerID:      s.runner.ID,
 		BaseURL:       s.runner.Host.String(),
+		ClientID:      s.runner.ClientID,
 		ClientSecret:  s.runner.ClientSecret,
 		WebhookSecret: s.runner.WebhookSecret,
 		Apps:          s.apps,
@@ -83,6 +85,7 @@ func (s *Syncer) Sync() error {
 
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Runner-ID", s.runner.ID)
 
 	response, err := s.client.Do(request)
 	if err != nil {
