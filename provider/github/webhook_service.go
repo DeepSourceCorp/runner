@@ -32,7 +32,6 @@ func NewWebhookService(appFactory *AppFactory, runner *model.Runner, deepsource 
 func (s *WebhookService) Process(req *WebhookRequest) (*http.Response, error) {
 	app := s.appFactory.GetApp(req.AppID)
 	if app == nil {
-		fmt.Println("here")
 		return nil, httperror.ErrAppInvalid(nil)
 	}
 
