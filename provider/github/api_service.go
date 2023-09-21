@@ -35,6 +35,9 @@ func (s *APIService) Process(req *APIRequest) (*http.Response, error) {
 		return nil, httperror.ErrUnknown(err)
 	}
 
+	// Remove the DeepSource authorization header if present
+	req.HTTPRequest.Header.Del("Authorization")
+
 	header := http.Header{}
 	header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 	if req.HTTPRequest.Header.Get("Accept") == "" {

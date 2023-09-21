@@ -2,7 +2,6 @@ package proxyutil
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -118,6 +117,7 @@ func (f *Forwarder) Forward(req *http.Request, extras *ForwarderOpts) (*http.Res
 		return nil, fmt.Errorf("failed to create target request: %w", err)
 	}
 
+	CopyHeader(out.Header, req.Header)
 	AppendHeaders(out, extras.Headers)
 
 	CopyQueryParams(out, req)
@@ -125,10 +125,6 @@ func (f *Forwarder) Forward(req *http.Request, extras *ForwarderOpts) (*http.Res
 
 	RemoveHopHeaders(out.Header)
 	RemoveCloudflareHeaders(out.Header)
-
-	x, _ := json.Marshal(out.Header)
-	fmt.Println("REQUEST URL", out.URL.String())
-	fmt.Println("REQUEST HEADERS: ", string(x))
 
 	return f.client.Do(out)
 }
