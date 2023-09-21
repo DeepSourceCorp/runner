@@ -118,7 +118,6 @@ func (f *Forwarder) Forward(req *http.Request, extras *ForwarderOpts) (*http.Res
 		return nil, fmt.Errorf("failed to create target request: %w", err)
 	}
 
-	CopyHeader(out.Header, req.Header)
 	AppendHeaders(out, extras.Headers)
 
 	CopyQueryParams(out, req)

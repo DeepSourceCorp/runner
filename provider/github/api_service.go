@@ -39,6 +39,8 @@ func (s *APIService) Process(req *APIRequest) (*http.Response, error) {
 	header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 	if req.HTTPRequest.Header.Get("Accept") == "" {
 		header.Set("Accept", HeaderValueGithubAccept)
+	} else {
+		header.Set("Accept", req.HTTPRequest.Header.Get("Accept"))
 	}
 
 	forwarder := proxyutil.NewForwarder(s.client)
