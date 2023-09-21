@@ -6,6 +6,7 @@ import (
 
 	"github.com/deepsourcecorp/runner/httperror"
 	"github.com/deepsourcecorp/runner/proxyutil"
+	"golang.org/x/exp/slog"
 )
 
 type APIService struct {
@@ -48,6 +49,9 @@ func (s *APIService) Process(req *APIRequest) (*http.Response, error) {
 			Headers:   header,
 		},
 	)
+
+	slog.Info("Status code from GitHub", slog.Int("status_code", res.StatusCode))
+
 	if err != nil {
 		err = fmt.Errorf("failed to proxy request: %w", err)
 		return nil, httperror.ErrUnknown(err)
