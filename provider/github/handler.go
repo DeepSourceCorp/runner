@@ -27,8 +27,8 @@ func NewHandler(
 	webhookService *WebhookService,
 	apiService *APIService,
 	appFactory *AppFactory,
-	runner *model.Runner,
-	deepsource *model.DeepSource,
+	_ *model.Runner,
+	_ *model.DeepSource,
 	httpClient *http.Client) (*Handler, error) {
 	return &Handler{
 		apiService:     apiService,
@@ -67,7 +67,7 @@ func (h *Handler) HandleWebhook(c echo.Context) error {
 	return h.writeResponse(c, res)
 }
 
-func (h *Handler) writeResponse(c echo.Context, res *http.Response) error {
+func (*Handler) writeResponse(c echo.Context, res *http.Response) error {
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
