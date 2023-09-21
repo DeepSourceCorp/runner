@@ -45,6 +45,7 @@ func (h *Handler) HandleAPI(c echo.Context) error {
 	if err != nil {
 		return httperror.ErrMissingParams(err)
 	}
+
 	res, err := h.apiService.Process(req)
 	if err != nil {
 		return httperror.ErrUpstreamFailed(err)
@@ -74,6 +75,8 @@ func (*Handler) writeResponse(c echo.Context, res *http.Response) error {
 		slog.Error("failed to read response body", slog.Any("err", err))
 		return httperror.ErrUnknown(err)
 	}
+
+	fmt.Println("GITHUB RESPONSE: ", res.StatusCode, string(body))
 
 	c.Response().Writer.WriteHeader(res.StatusCode)
 	if _, err := c.Response().Writer.Write(body); err != nil {

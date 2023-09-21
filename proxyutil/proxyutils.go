@@ -2,6 +2,7 @@ package proxyutil
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -109,6 +110,10 @@ func (f *Forwarder) Forward(req *http.Request, extras *ForwarderOpts) (*http.Res
 	AppendQueryParams(out, extras.Query)
 
 	RemoveHopHeaders(out.Header)
+
+	fmt.Println("REQUEST BODY: ", string(body))
+	x, _ := json.Marshal(out.Header)
+	fmt.Println("REQUEST HEADERS: ", x)
 
 	return f.client.Do(out)
 }
