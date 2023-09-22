@@ -33,7 +33,7 @@ func TestSessionAuthMiddleware(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, http.StatusTemporaryRedirect, rec.Code)
-		assert.Equal(t, "/refresh", rec.Header().Get("Location"))
+		assert.Equal(t, "/refresh?redirect=/", rec.Header().Get("Location"))
 	})
 
 	t.Run("cookie empty", func(t *testing.T) {
@@ -48,7 +48,7 @@ func TestSessionAuthMiddleware(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, http.StatusTemporaryRedirect, rec.Code)
-		assert.Equal(t, "/refresh", rec.Header().Get("Location"))
+		assert.Equal(t, "/refresh?redirect=/", rec.Header().Get("Location"))
 	})
 
 	t.Run("cookie invalid", func(t *testing.T) {
@@ -63,7 +63,7 @@ func TestSessionAuthMiddleware(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, http.StatusTemporaryRedirect, rec.Code)
-		assert.Equal(t, "/refresh", rec.Header().Get("Location"))
+		assert.Equal(t, "/refresh?redirect=/", rec.Header().Get("Location"))
 	})
 
 	user := &model.User{
@@ -88,7 +88,7 @@ func TestSessionAuthMiddleware(t *testing.T) {
 		err = h(c)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusTemporaryRedirect, rec.Code)
-		assert.Equal(t, "/refresh", rec.Header().Get("Location"))
+		assert.Equal(t, "/refresh?redirect=/", rec.Header().Get("Location"))
 	})
 
 	t.Run("valid token", func(t *testing.T) {

@@ -5,12 +5,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deepsourcecorp/runner/config"
+	runnerconfig "github.com/deepsourcecorp/runner/config"
+	runnermiddleware "github.com/deepsourcecorp/runner/middleware"
 	"github.com/getsentry/sentry-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/exp/slog"
 )
+
+var version string
 
 const (
 	Banner = `________
@@ -19,10 +22,8 @@ __  /_/ /  / / /_  __ \_  __ \  _ \_  ___/
 _  _, _// /_/ /_  / / /  / / /  __/  /    
 /_/ |_| \__,_/ /_/ /_//_/ /_/\___//_/     
 ------------------------------------------
-By DeepSource | v%s
+By DeepSource | %s
 ------------------------------------------`
-
-	Version = "0.1.0-beta.1"
 )
 
 const (
@@ -33,12 +34,12 @@ const (
 
 type Server struct {
 	*echo.Echo
-	*config.Config
+	*runnerconfig.Config
 	*http.Client
 	cors echo.MiddlewareFunc
 }
 
-func NewServer(c *config.Config) *Server {
+func NewServer(c *runnerconfig.Config) *Server {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
@@ -54,7 +55,7 @@ func NewServer(c *config.Config) *Server {
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "time=${time_rfc3339_nano} level=INFO method=${method}, uri=${uri}, status=${status}\n",
 	}))
-	cors := CorsMiddleware(c.DeepSource.Host.String())
+	cors := runnermiddleware.CorsMiddleware(c.DeepSource.Host.String())
 	return &Server{Echo: e, Config: c, cors: cors}
 }
 
@@ -68,7 +69,7 @@ func (s *Server) Start() error {
 }
 
 func (*Server) PrintBanner() {
-	fmt.Println(fmt.Sprintf(Banner, Version))
+	fmt.Println(fmt.Sprintf(Banner, version))
 }
 
 func (s *Server) Router() (*Router, error) {

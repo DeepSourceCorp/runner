@@ -11,7 +11,7 @@ import (
 	"github.com/deepsourcecorp/runner/provider/model"
 )
 
-func GetProvider(ctx context.Context, c *config.Config, client *http.Client) (*provider.Facade, error) {
+func GetProvider(_ context.Context, c *config.Config, client *http.Client) (*provider.Facade, error) {
 	githubApps := createGithubApps(c)
 	providerApps := createProviderApps(c)
 
@@ -24,10 +24,12 @@ func GetProvider(ctx context.Context, c *config.Config, client *http.Client) (*p
 		Host: c.DeepSource.Host,
 	}
 
-	apiFactory := github.NewAPIProxyFactory(githubApps, client)
-	webhookFactory := github.NewWebhookProxyFactory(runner, deepsource, githubApps, client)
+	appFactory := github.NewAppFactory(githubApps)
 
-	githubProvider, err := github.NewHandler(apiFactory, webhookFactory)
+	webhookService := github.NewWebhookService(appFactory, runner, deepsource, client)
+	apiService := github.NewAPIService(appFactory, client)
+
+	githubProvider, err := github.NewHandler(webhookService, apiService, appFactory, runner, deepsource, client)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing provider: %w", err)
 	}

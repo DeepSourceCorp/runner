@@ -38,6 +38,7 @@ func TestSyncer_Sync(t *testing.T) {
 		err := json.NewDecoder(r.Body).Decode(payload)
 		assert.NoError(t, err)
 
+		assert.Equal(t, runner.ID, r.Header.Get("X-Runner-ID"))
 		assert.Equal(t, runner.ID, payload.RunnerID)
 		assert.Equal(t, runner.Host.String(), payload.BaseURL)
 		assert.Equal(t, runner.ClientID, payload.ClientID)
