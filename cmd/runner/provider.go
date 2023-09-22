@@ -11,7 +11,7 @@ import (
 	"github.com/deepsourcecorp/runner/provider/model"
 )
 
-func GetProvider(ctx context.Context, c *config.Config, client *http.Client) (*provider.Facade, error) {
+func GetProvider(_ context.Context, c *config.Config, client *http.Client) (*provider.Facade, error) {
 	githubApps := createGithubApps(c)
 	providerApps := createProviderApps(c)
 
