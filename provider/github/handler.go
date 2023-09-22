@@ -12,7 +12,6 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-const ()
 
 type Handler struct {
 	apiService     *APIService
