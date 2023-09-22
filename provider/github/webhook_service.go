@@ -6,9 +6,9 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/deepsourcecorp/runner/forwarder"
 	"github.com/deepsourcecorp/runner/httperror"
 	"github.com/deepsourcecorp/runner/provider/model"
-	"github.com/deepsourcecorp/runner/proxyutil"
 	"golang.org/x/exp/slog"
 )
 
@@ -61,9 +61,9 @@ func (s *WebhookService) Process(req *WebhookRequest) (*http.Response, error) {
 
 	header := s.prepareHeader(app, signature)
 
-	forwarder := proxyutil.NewForwarder(s.client)
+	f := forwarder.New(s.client)
 
-	res, err := forwarder.Forward(req.HTTPRequest, &proxyutil.ForwarderOpts{
+	res, err := f.Forward(req.HTTPRequest, &forwarder.Opts{
 		TargetURL: *s.deepsource.WebhookURL(),
 		Headers:   header,
 		Query:     nil,

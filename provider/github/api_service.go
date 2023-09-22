@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/deepsourcecorp/runner/forwarder"
 	"github.com/deepsourcecorp/runner/httperror"
-	"github.com/deepsourcecorp/runner/proxyutil"
 	"golang.org/x/exp/slog"
 )
 
@@ -48,10 +48,10 @@ func (s *APIService) Process(req *APIRequest) (*http.Response, error) {
 		header.Set("Accept", req.HTTPRequest.Header.Get("Accept"))
 	}
 
-	forwarder := proxyutil.NewForwarder(s.client)
-	res, err := forwarder.Forward(
+	f := forwarder.New(s.client)
+	res, err := f.Forward(
 		req.HTTPRequest,
-		&proxyutil.ForwarderOpts{
+		&forwarder.Opts{
 			TargetURL: *installationClient.ProxyURL(req.HTTPRequest.URL.Path),
 			Headers:   header,
 		})

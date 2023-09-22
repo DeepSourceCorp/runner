@@ -1,4 +1,4 @@
-package proxyutil
+package forwarder
 
 import (
 	"bytes"
@@ -37,9 +37,9 @@ func TestProxy(t *testing.T) {
 	extraHeaders := http.Header{}
 	extraHeaders.Set("Extra-Header", "extra-header-value")
 
-	forwarder := NewForwarder(http.DefaultClient)
+	forwarder := New(http.DefaultClient)
 
-	res, err := forwarder.Forward(in, &ForwarderOpts{
+	res, err := forwarder.Forward(in, &Opts{
 		TargetURL: *serverURL,
 		Headers:   extraHeaders,
 		Query:     map[string][]string{"extra-query": {"2"}},
