@@ -53,7 +53,12 @@ func (f *Forwarder) Forward(req *http.Request, opts *Opts) (*http.Response, erro
 	removeHopHeaders(out.Header)
 	removeCloudflareHeaders(out.Header)
 
-	return f.client.Do(out)
+	res, err := f.client.Do(out)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make target request: %w", err)
+	}
+	removeHopHeaders(res.Header)
+	return res, nil
 }
 
 func copyHeader(dst, src http.Header) {

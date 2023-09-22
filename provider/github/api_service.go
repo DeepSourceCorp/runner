@@ -36,16 +36,13 @@ func (s *APIService) Process(req *APIRequest) (*http.Response, error) {
 	}
 
 	// Remove the DeepSource authorization header if present
-	req.HTTPRequest.Header.Del("Authorization")
-	req.HTTPRequest.Header.Del("Accept-Encoding")
+	req.HTTPRequest.Header.Del(HeaderAuthorization)
 
+	// add extra headers for GitHub API request.  If empty, set "Accept" to "application/vnd.github+json"
 	header := http.Header{}
-	header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-
-	if req.HTTPRequest.Header.Get("Accept") == "" {
-		header.Set("Accept", HeaderValueGithubAccept)
-	} else {
-		header.Set("Accept", req.HTTPRequest.Header.Get("Accept"))
+	header.Set(HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
+	if req.HTTPRequest.Header.Get(HeaderAccept) == "" {
+		header.Set(HeaderAccept, HeaderValueGithubAccept)
 	}
 
 	f := forwarder.New(s.client)

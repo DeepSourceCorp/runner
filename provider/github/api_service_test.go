@@ -27,6 +27,7 @@ func TestAPIService_Process(t *testing.T) {
 		assert.Equal(t, http.MethodGet, r.Method)
 		assert.Equal(t, "/user", r.URL.Path)
 		assert.Equal(t, "Bearer test-token", r.Header.Get("Authorization"))
+		assert.Equal(t, "original-accept", r.Header.Get("Accept"))
 
 		gotBody, _ := io.ReadAll(r.Body)
 		assert.Equal(t, body, gotBody)
@@ -49,10 +50,14 @@ func TestAPIService_Process(t *testing.T) {
 		apps: map[string]*App{"test-app-id": app},
 	}
 
+	httpRequest := httptest.NewRequest(http.MethodGet, "https://test.com/apps/test-app-id/api/user", bytes.NewReader(body))
+	httpRequest.Header.Set(HeaderAuthorization, "original-authorization") // This should be removed
+	httpRequest.Header.Set(HeaderAccept, "original-accept")               // This should be retained
+
 	request := &APIRequest{
 		AppID:          "test-app-id",
 		InstallationID: "test-installation-id",
-		HTTPRequest:    httptest.NewRequest(http.MethodGet, "https://test.com/apps/test-app-id/api/user", bytes.NewReader(body)),
+		HTTPRequest:    httpRequest,
 	}
 
 	service := NewAPIService(appFactory, http.DefaultClient)
