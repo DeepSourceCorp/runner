@@ -23,6 +23,11 @@ var migrations = []Migration{
 		Up:   Up001,
 		Down: Down001,
 	},
+	{
+		Name: "002",
+		Up:   Up002,
+		Down: Down002,
+	},
 }
 
 func NewMigrator(db *gorqlite.Connection) (*Migrator, error) {

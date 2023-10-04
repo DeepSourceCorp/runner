@@ -27,8 +27,7 @@ func TestGithub_AuthorizationURL(t *testing.T) {
 		RedirectURL:  *redirect,
 	}
 
-	github, err := NewGithub(app)
-	assert.NoError(t, err)
+	github := NewGithub(app)
 
 	authroization := github.AuthorizationURL("state", []string{})
 
@@ -84,8 +83,7 @@ func TestGithub_GetToken(t *testing.T) {
 		RedirectURL:  *redirect,
 	}
 
-	github, err := NewGithub(app)
-	assert.NoError(t, err)
+	github := NewGithub(app)
 
 	token, err := github.GetToken(context.Background(), code)
 	assert.NoError(t, err)
@@ -139,8 +137,7 @@ func TestGithub_RefreshToken(t *testing.T) {
 		RedirectURL:  *redirect,
 	}
 
-	github, err := NewGithub(app)
-	assert.NoError(t, err)
+	github := NewGithub(app)
 
 	token, err := github.RefreshToken(context.Background(), refreshToken)
 

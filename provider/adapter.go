@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/deepsourcecorp/runner/httperror"
-	"github.com/deepsourcecorp/runner/provider/github"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slog"
 )
@@ -24,7 +23,7 @@ type Adapter struct {
 }
 
 // New creates a new provider facade.
-func NewAdapter(apps map[string]*App, githubProvider *github.Handler) *Adapter {
+func NewAdapter(apps map[string]*App, githubProvider Provider) *Adapter {
 	return &Adapter{
 		providers: map[string]Provider{
 			"github": githubProvider,

@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"github.com/deepsourcecorp/runner/provider/github"
 	"github.com/labstack/echo/v4"
 )
 
@@ -13,9 +12,14 @@ type Facade struct {
 	Adapter *Adapter
 }
 
-func NewFacade(apps map[string]*App, githubProvider *github.Handler) *Facade {
+type Opts struct {
+	Apps           map[string]*App
+	GithubProvider Provider
+}
+
+func NewFacade(opts *Opts) *Facade {
 	return &Facade{
-		Adapter: NewAdapter(apps, githubProvider),
+		Adapter: NewAdapter(opts.Apps, opts.GithubProvider),
 	}
 }
 

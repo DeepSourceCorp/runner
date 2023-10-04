@@ -29,12 +29,16 @@ func GetProvider(_ context.Context, c *config.Config, client *http.Client) (*pro
 	webhookService := github.NewWebhookService(appFactory, runner, deepsource, client)
 	apiService := github.NewAPIService(appFactory, client)
 
-	githubProvider, err := github.NewHandler(webhookService, apiService, appFactory, runner, deepsource, client)
+	githubProvider, err := github.NewHandler(webhookService, apiService, appFactory, client)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing provider: %w", err)
 	}
 
-	return provider.NewFacade(providerApps, githubProvider), nil
+	opts := &provider.Opts{
+		Apps:           providerApps,
+		GithubProvider: githubProvider,
+	}
+	return provider.NewFacade(opts), nil
 }
 
 func createGithubApps(c *config.Config) map[string]*github.App {

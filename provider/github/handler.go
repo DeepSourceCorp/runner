@@ -7,11 +7,9 @@ import (
 	"net/url"
 
 	"github.com/deepsourcecorp/runner/httperror"
-	"github.com/deepsourcecorp/runner/provider/model"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slog"
 )
-
 
 type Handler struct {
 	apiService     *APIService
@@ -26,8 +24,6 @@ func NewHandler(
 	webhookService *WebhookService,
 	apiService *APIService,
 	appFactory *AppFactory,
-	_ *model.Runner,
-	_ *model.DeepSource,
 	httpClient *http.Client) (*Handler, error) {
 	return &Handler{
 		apiService:     apiService,

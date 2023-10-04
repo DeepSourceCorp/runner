@@ -3,28 +3,17 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/deepsourcecorp/runner/auth"
-	"github.com/deepsourcecorp/runner/auth/model"
-	"github.com/deepsourcecorp/runner/auth/oauth"
-	"github.com/deepsourcecorp/runner/auth/saml"
-	"github.com/deepsourcecorp/runner/auth/store"
-	rqlitestore "github.com/deepsourcecorp/runner/auth/store/rqlite"
+	"github.com/deepsourcecorp/runner/auth/v2/model"
+	"github.com/deepsourcecorp/runner/auth/v2/oauth"
+	"github.com/deepsourcecorp/runner/auth/v2/saml"
 
 	"github.com/deepsourcecorp/runner/config"
 	"github.com/deepsourcecorp/runner/rqlite"
 )
 
-func GetAuthentiacator(ctx context.Context, c *config.Config) (*auth.Facade, error) {
-	apps := createOAuthApps(c)
-
-	store, err := createRQLiteStore(c.RQLite)
-	if err != nil {
-		return nil, fmt.Errorf("error initialising auth: %w", err)
-	}
-
-	samlOpts := setupSAMLOptions(c)
+func GetAuthentiacator(ctx context.Context, c *config.Config) (*auth.Auth, error) {
 
 	runner := &model.Runner{
 		ID:           c.Runner.ID,
@@ -38,16 +27,22 @@ func GetAuthentiacator(ctx context.Context, c *config.Config) (*auth.Facade, err
 		PublicKey: c.DeepSource.PublicKey,
 	}
 
-	opts := &auth.Opts{
-		Runner:        runner,
-		DeepSource:    deepsource,
-		Apps:          apps,
-		Store:         store,
-		SAML:          samlOpts,
-		AllowedOrigin: c.DeepSource.Host.String(),
+	apps := createOAuthApps(c)
+
+	database, err := getDatabase(c)
+	if err != nil {
+		return nil, fmt.Errorf("error initialising auth: %w", err)
 	}
 
-	app, err := auth.New(ctx, opts, http.DefaultClient)
+	opts := &auth.Opts{
+		Runner:     runner,
+		DeepSource: deepsource,
+		Apps:       apps,
+
+		Database: database,
+	}
+
+	app, err := auth.New(opts)
 	if err != nil {
 		return nil, fmt.Errorf("error initalizing auth: %w", err)
 	}
@@ -74,12 +69,15 @@ func createOAuthApps(c *config.Config) map[string]*oauth.App {
 	return apps
 }
 
-func createRQLiteStore(c *config.RQLite) (store.Store, error) {
-	db, err := rqlite.Connect(c.Host, c.Port)
-	if err != nil {
-		return nil, fmt.Errorf("error creating rqlite store: %w", err)
+func getDatabase(c *config.Config) (interface{}, error) {
+	if c.RQLite != nil {
+		db, err := rqlite.Connect(c.RQLite.Host, c.RQLite.Port)
+		if err != nil {
+			return nil, fmt.Errorf("error creating rqlite store: %w", err)
+		}
+		return db, nil
 	}
-	return rqlitestore.New(db), nil
+	return nil, nil
 }
 
 func setupSAMLOptions(c *config.Config) *saml.Opts {

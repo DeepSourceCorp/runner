@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/deepsourcecorp/runner/auth/model"
+	"github.com/deepsourcecorp/runner/model"
 	"golang.org/x/oauth2"
 )
 
@@ -32,7 +32,7 @@ type Github struct {
 	apiHost  url.URL
 }
 
-func NewGithub(app *App) (IBackend, error) {
+func NewGithub(app *App) Backend {
 	return &Github{
 		config: &oauth2.Config{
 			ClientID:     app.ClientID,
@@ -47,7 +47,7 @@ func NewGithub(app *App) (IBackend, error) {
 		client:   &http.Client{},
 		authHost: app.AuthHost,
 		apiHost:  app.APIHost,
-	}, nil
+	}
 }
 
 func (g *Github) AuthorizationURL(state string, scopes []string) string {
@@ -66,7 +66,7 @@ func (g *Github) GetToken(ctx context.Context, code string) (*oauth2.Token, erro
 func (g *Github) RefreshToken(ctx context.Context, refreshToken string) (*oauth2.Token, error) {
 	token := new(oauth2.Token)
 	token.RefreshToken = refreshToken
-	token.Expiry = time.Now()
+	token.Expiry = time.Now().Add(-time.Hour)
 
 	ts := g.config.TokenSource(ctx, token)
 	token, err := ts.Token()
@@ -129,6 +129,8 @@ func (g *Github) GetUser(ctx context.Context, token *oauth2.Token) (*model.User,
 		}
 		u.Email = email
 	}
+	user := u.ToModel()
+	user.Provider = ProviderGithub
 	return u.ToModel(), nil
 }
 

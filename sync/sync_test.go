@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/deepsourcecorp/runner/auth/jwtutil"
+	"github.com/deepsourcecorp/runner/jwtutil"
 	"github.com/stretchr/testify/assert"
 )
 

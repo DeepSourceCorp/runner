@@ -1,322 +1,242 @@
 package oauth
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
-	"time"
 
-	"github.com/deepsourcecorp/runner/auth/model"
-	"github.com/deepsourcecorp/runner/auth/store"
-	"github.com/deepsourcecorp/runner/auth/token"
+	"github.com/deepsourcecorp/runner/auth/session"
 	"github.com/deepsourcecorp/runner/httperror"
+	"github.com/deepsourcecorp/runner/model"
 	"github.com/labstack/echo/v4"
-	"github.com/segmentio/ksuid"
-	"golang.org/x/exp/slog"
 	"golang.org/x/oauth2"
 )
 
+const (
+	// BifrostCallbackURLFmt is the callback path for DeepSource Cloud.
+	BifrostCallbackURLFmt = "/accounts/runner/apps/%s/login/callback/bifrost/"
+
+	// SessionURLFmt is the callback path for the interstitial page for setting
+	// the session cookie.
+	SessionURLFmt = "/apps/%s/auth/session?state=%s"
+)
+
+// Handler handles the OAuth2 flow for the Runner.  This handler exposes echo handlers.
 type Handler struct {
-	runner     *model.Runner
-	deepsource *model.DeepSource
-	factory    *Factory
-	store      store.Store
-
-	tokenService *token.Service
+	cloudURL       *url.URL
+	runner         *model.Runner
+	backend        *BackendFacade
+	sessionService *session.Service
 }
 
-var ErrInvalidClientCredentials = errors.New("invalid client credentials")
-
-func NewHandler(runner *model.Runner, deepsource *model.DeepSource, store store.Store, tokenService *token.Service, factory *Factory) *Handler {
+// NewHandler returns a new Handler instance.
+func NewHandler(
+	runner *model.Runner, cloudURL *url.URL, apps map[string]*App, sessionService *session.Service,
+) (*Handler, error) {
 	return &Handler{
-		runner:     runner,
-		deepsource: deepsource,
-		factory:    factory,
-		store:      store,
-
-		tokenService: tokenService,
-	}
+		runner:         runner,
+		cloudURL:       cloudURL,
+		sessionService: sessionService,
+		backend:        NewBackendFacade(apps),
+	}, nil
 }
 
-type AuthorizationRequest struct {
-	AppID    string `param:"app_id"`
-	ClientID string `query:"client_id"`
-	Scopes   string `query:"scopes"`
-	State    string `query:"state"`
-}
-
+// HandleAuthorize generates the authorization URL for the underlying backend
+// and redirects the user to the authorization URL.  This triggers the login
+// page on the OAuth backend.
 func (h *Handler) HandleAuthorize(c echo.Context) error {
-	// Parse the authorization request.
-	req := new(AuthorizationRequest)
-	if err := c.Bind(req); err != nil {
-		slog.Error("authorization request bind error", slog.Any("err", err))
-		return httperror.ErrMissingParams(err)
+	req, err := NewAuthorizationRequest(c)
+	if err != nil {
+		return err
 	}
-
-	scopes := strings.Split(req.Scopes, " ")
-
 	if !h.runner.IsValidClientID(req.ClientID) {
-		slog.Warn("authorization request with invalid client id", slog.Any("client_id", req.ClientID))
-		return httperror.ErrAppInvalid(errors.New("invalid client id"))
+		return httperror.ErrUnknown(fmt.Errorf("invalid client id")) // TODO: Add ErrNotFound
 	}
-
-	// Generate the authroization URL for the upstream identity provider and
-	// redirect the user to the authorization URL for the identity provider.
-	backend, err := h.factory.GetBackend(req.AppID)
-	if err != nil {
-		slog.Warn("authorization request on app with unsupported provider", slog.Any("app_id", req.AppID))
-		return httperror.ErrAppUnsupported(err)
-	}
-
-	redirectURL := backend.AuthorizationURL(req.State, scopes)
-	return c.Redirect(http.StatusTemporaryRedirect, redirectURL)
-}
-
-type CallbackRequest struct {
-	AppID string `param:"app_id"`
-	Code  string `query:"code"`
-	State string `query:"state"`
-}
-
-func (h *Handler) HandleCallback(c echo.Context) error {
-	ctx := c.Request().Context()
-
-	req := &CallbackRequest{}
-	if err := c.Bind(req); err != nil {
-		slog.Error("callback request bind error", slog.Any("err", err))
-		return httperror.ErrMissingParams(err)
-	}
-
-	backend, err := h.factory.GetBackend(req.AppID)
-	if err != nil {
-		slog.Warn("callback request on app with unsupported provider", slog.Any("app_id", req.AppID))
-		return httperror.ErrAppUnsupported(err)
-	}
-
-	t, err := backend.GetToken(ctx, req.Code)
-	if err != nil {
-		slog.Error("callback request failed while getting token", slog.Any("err", err))
-		return httperror.ErrUnknown(err)
-	}
-
-	user, err := backend.GetUser(ctx, t)
-	if err != nil {
-		slog.Error("callback request failed while getting user", slog.Any("err", err))
-		return httperror.ErrUnknown(err)
-	}
-
-	// Generate and set the access token cookie.  This will be used during the
-	// session request to authenticate the authentication request.
-	accessToken, err := h.tokenService.GenerateToken(
-		h.runner.ID, []string{token.ScopeUser, token.ScopeCodeRead},
-		user, token.ExpiryAccessToken,
+	authorizationURL, err := h.backend.AuthorizationURL(
+		req.AppID, req.State, strings.Split(req.Scopes, ","),
 	)
 	if err != nil {
-		slog.Error("callback request failed while generating access token", slog.Any("err", err))
-		return httperror.ErrUnknown(err)
+		return err
 	}
-	c.SetCookie(&http.Cookie{
-		Name:     "session",
-		Value:    accessToken,
-		Path:     "/",
-		SameSite: http.SameSiteNoneMode,
-		Secure:   true,
-		HttpOnly: true,
-	})
+	return c.Redirect(http.StatusTemporaryRedirect, authorizationURL)
+}
 
-	// Generate and set the refresh token cookie.
-	refreshToken, err := h.tokenService.GenerateToken(
-		h.runner.ID, []string{token.ScopeRefresh},
-		user, token.ExpiryRefreshToken)
+// HandleCallback handles the callback request from the underlying backend.  This
+// completes the OAuth flow with the backend and sets a session cookie that will
+// be used to generate the runner token.
+func (h *Handler) HandleCallback(c echo.Context) error {
+	req, err := NewCallbackRequest(c)
 	if err != nil {
-		slog.Error("callback request failed while generating refresh token", slog.Any("err", err))
-		return httperror.ErrUnknown(err)
+		return err
 	}
-	c.SetCookie(&http.Cookie{
-		Name:     "refresh",
-		Value:    refreshToken,
-		Path:     "/refresh",
-		SameSite: http.SameSiteNoneMode,
-		Secure:   true,
-		HttpOnly: true,
-	})
-
-	// We redirect to the session endpoint to set the session cookie.
-	// This breaks the OAuth2 convention, however this is a necessary
-	// evil to set a session between the user and the Runner instance.
-	return c.Redirect(http.StatusTemporaryRedirect, "/apps/"+req.AppID+"/auth/session?state="+req.State)
+	ctx := c.Request().Context()
+	backendToken, err := h.backend.Exchange(ctx, req.AppID, req.State, req.Code)
+	if err != nil {
+		return err
+	}
+	session := session.New()
+	if err := h.sessionService.SetBackendToken(
+		session, backendToken, backendToken.Expiry,
+	); err != nil {
+		return err
+	}
+	sessionToken, refreshToken, err := h.sessionService.GenerateSessionTokens(session)
+	if err != nil {
+		return err
+	}
+	setCookie(c, "session", sessionToken, "/")
+	setCookie(c, "refresh", refreshToken, "/refresh")
+	return c.Redirect(
+		http.StatusTemporaryRedirect,
+		fmt.Sprintf(SessionURLFmt, req.AppID, req.State),
+	)
 }
 
-type SessionRequest struct {
-	AppID string `param:"app_id"`
-	State string `query:"state"`
-}
-
+// HandleSesion is triggered after the HandleCallBack redirects the user to
+// iteself with a session cookie.  This will generate the access code for
+// runner and redirect the user to the bifrost callback URL with the Runner
+// access code.
 func (h *Handler) HandleSession(c echo.Context) error {
-	req := SessionRequest{}
-	if err := c.Bind(&req); err != nil {
-		slog.Error("session request bind error", slog.Any("err", err))
-		return httperror.ErrMissingParams(err)
-	}
-
-	cookie, err := c.Cookie("session")
+	req, err := NewSessionRequest(c)
 	if err != nil {
-		slog.Error("session request failed while getting session cookie", slog.Any("err", err))
-		return httperror.ErrUnauthorized(err)
+		return err
 	}
 
-	user, err := h.tokenService.ReadToken(h.runner.ID, token.ScopeUser, cookie.Value)
+	session, err := h.sessionService.ParseJWT(req.SessionToken, "")
 	if err != nil {
-		slog.Error("session request failed while reading session token", slog.Any("err", err))
-		return httperror.ErrUnauthorized(err)
+		return err
 	}
 
-	code := ksuid.New().String()
-	if err := h.store.SetAccessCode(code, user); err != nil {
-		slog.Error("session request failed while setting access code", slog.Any("err", err))
-		return httperror.ErrUnknown(err)
+	code, err := h.sessionService.GenerateAccessCode(session)
+	if err != nil {
+		return err
 	}
 
-	// Redirect back to DeepSource as the authorization callback with the code.
-	u := h.deepsource.Host.JoinPath(fmt.Sprintf("/accounts/runner/apps/%s/login/callback/bifrost/", req.AppID))
-	q := u.Query()
+	redirectURL := h.cloudURL.JoinPath(
+		fmt.Sprintf(BifrostCallbackURLFmt, req.AppID),
+	)
+
+	q := redirectURL.Query()
 	q.Add("app_id", req.AppID)
 	q.Add("code", code)
 	q.Add("state", req.State)
-	u.RawQuery = q.Encode()
+	redirectURL.RawQuery = q.Encode()
 
-	return c.Redirect(http.StatusTemporaryRedirect, u.String())
+	return c.Redirect(http.StatusTemporaryRedirect, redirectURL.String())
+
 }
 
-type TokenRequest struct {
-	AppID        string `param:"app_id"`
-	Code         string `query:"code" json:"code"`
-	ClientID     string `query:"client_id" json:"client_id"`
-	ClientSecret string `query:"client_secret" json:"client_secret"`
-}
-
+// HandleToken handles the token request.  This completes the OAuth2 flow of
+// Runner and issues a runner token in exchange for the authorization code.
 func (h *Handler) HandleToken(c echo.Context) error {
-	req := new(TokenRequest)
-	if err := c.Bind(req); err != nil {
-		slog.Error("token request bind error", slog.Any("err", err))
-		return httperror.ErrMissingParams(err)
-	}
-	if !h.runner.IsValidClientID(req.ClientID) || !h.runner.IsValidClientSecret(req.ClientSecret) {
-		slog.Warn("token request with invalid client credentials", slog.Any("client_id", req.ClientID))
-		return httperror.ErrAppInvalid(ErrInvalidClientCredentials)
-	}
-
-	user, err := h.store.VerifyAccessCode(req.Code)
+	req, err := NewTokenRequest(c)
 	if err != nil {
-		slog.Error("token request failed while verifying access code", slog.Any("err", err))
-		return httperror.ErrUnauthorized(err)
+		return err
 	}
 
-	accessToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser}, user, token.ExpiryAccessToken)
+	if !h.runner.IsValidClient(req.ClientID, req.ClientSecret) {
+		return httperror.ErrUnauthorized(fmt.Errorf("invalid client credentials"))
+	}
+
+	session, err := h.sessionService.GetByAccessCode(req.Code)
 	if err != nil {
-		slog.Error("token request failed while generating access token", slog.Any("err", err))
-		return httperror.ErrUnknown(err)
+		return err
 	}
-	refreshtToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser}, user, token.ExpiryRefreshToken)
+
+	token, err := h.sessionService.GenerateOauthToken(session)
 	if err != nil {
-		slog.Error("token request failed while generating refresh token", slog.Any("err", err))
-		return httperror.ErrUnknown(err)
+		return err
 	}
 
-	return c.JSON(200, &oauth2.Token{
-		AccessToken:  accessToken,
-		RefreshToken: refreshtToken,
-		Expiry:       time.Now().Add(15 * time.Minute),
-		TokenType:    "Bearer",
-	})
+	res := NewTokenResponse(token)
+	return c.JSON(http.StatusOK, res)
 }
 
-type UserRequest struct {
-	AppID       string
-	AccessToken string
-}
-
-func (r *UserRequest) Parse(c echo.Context) error {
-	r.AppID = c.Param("app_id")
-	h := c.Request().Header.Get("Authorization")
-	if h == "" {
-		return fmt.Errorf("missing authorization header")
+// HandleRefresh is the Refresh token endpoint.  This refreshes the underlying
+// access token and issues a new token.
+func (h *Handler) HandleRefresh(c echo.Context) error {
+	ctx := c.Request().Context()
+	req, err := NewRefreshRequest(c)
+	if err != nil {
+		return err
 	}
-	parts := strings.Split(h, " ")
-	if len(parts) != 2 {
-		return fmt.Errorf("invalid authorization header")
+
+	if !h.runner.IsValidClient(req.ClientID, req.ClientSecret) {
+		return httperror.ErrUnauthorized(fmt.Errorf("invalid client credentials"))
 	}
-	if parts[0] != "Bearer" {
-		return fmt.Errorf("invalid authorization header")
+
+	session, err := h.sessionService.ParseJWT(req.RefreshToken, "")
+	if err != nil {
+		return err
 	}
-	r.AccessToken = parts[1]
-	return nil
+
+	// Refresht the backend token.
+	backendToken := new(oauth2.Token)
+	if err := session.DeserializeBackendToken(backendToken); err != nil {
+		return err
+	}
+
+	backendToken, err = h.backend.RefreshToken(ctx, req.AppID, backendToken.RefreshToken)
+	if err != nil {
+		return err
+	}
+
+	session.ExpiresAt = backendToken.Expiry.Unix()
+
+	err = h.sessionService.SetBackendToken(session, backendToken, backendToken.Expiry)
+	if err != nil {
+		return err
+	}
+
+	// Generate new Runner token.
+	token, err := h.sessionService.GenerateOauthToken(session)
+	if err != nil {
+		return err
+	}
+
+	res := NewTokenResponse(token)
+
+	return c.JSON(http.StatusOK, res)
 }
 
-type UserResponse struct {
-	ID       string `json:"id"`
-	UserName string `json:"username"`
-	FullName string `json:"full_name"`
-	Email    string `json:"email"`
-}
-
+// HandleUser handles the user request.  This fetches the user from the underlying
+// OAuth backend.
 func (h *Handler) HandleUser(c echo.Context) error {
-	req := new(UserRequest)
-	if err := req.Parse(c); err != nil {
-		slog.Error("user request parse error", slog.Any("err", err))
-		return httperror.ErrMissingParams(err)
-	}
-
-	user, err := h.tokenService.ReadToken(h.runner.ID, token.ScopeUser, req.AccessToken)
+	req, err := NewUserRequest(c)
 	if err != nil {
-		slog.Error("user request failed while reading access token", slog.Any("err", err))
-		return httperror.ErrUnauthorized(err)
+		return err
+	}
+	ctx := c.Request().Context()
+
+	session, err := h.sessionService.ParseJWT(req.AccessToken, "")
+	if err != nil {
+		return err
 	}
 
-	return c.JSON(200, &UserResponse{
-		UserName: user.Login,
+	backendToken := new(oauth2.Token)
+	if err := session.DeserializeBackendToken(backendToken); err != nil {
+		return err
+	}
+
+	user, err := h.backend.GetUser(ctx, req.AppID, backendToken)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, &UserResponse{
+		ID:       user.ID,
 		Email:    user.Email,
 		FullName: user.Name,
-		ID:       user.ID,
+		UserName: user.Login,
 	})
 }
-
-type RefreshRequest struct {
-	AppID        string `param:"app_id"`
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-	RefreshToken string `json:"refresh_token"`
-}
-
-func (h *Handler) HandleRefresh(c echo.Context) error {
-	req := &RefreshRequest{}
-	if err := c.Bind(req); err != nil {
-		slog.Error("refresh request bind error", slog.Any("err", err))
-		return httperror.ErrMissingParams(err)
-	}
-
-	if !(h.runner.IsValidClientID(req.ClientID) || !h.runner.IsValidClientSecret(req.ClientSecret)) {
-		slog.Warn("refresh request with invalid client credentials", slog.Any("client_id", req.ClientID))
-		return httperror.ErrAppInvalid(ErrInvalidClientCredentials)
-	}
-
-	user, err := h.tokenService.ReadToken(h.runner.ID, token.ScopeRefresh, req.RefreshToken)
-	if err != nil {
-		slog.Error("refresh request failed while reading refresh token", slog.Any("err", err))
-		return httperror.ErrUnauthorized(err)
-	}
-
-	accessToken, err := h.tokenService.GenerateToken(h.runner.ID, []string{token.ScopeUser}, user, token.ExpiryAccessToken)
-	if err != nil {
-		slog.Error("refresh request failed while generating access token", slog.Any("err", err))
-		return httperror.ErrUnknown(err)
-	}
-
-	return c.JSON(200, &oauth2.Token{
-		AccessToken:  accessToken,
-		RefreshToken: req.RefreshToken,
-		Expiry:       time.Now().Add(15 * time.Minute),
-		TokenType:    "Bearer",
+func setCookie(c echo.Context, name, value, path string) {
+	c.SetCookie(&http.Cookie{
+		Name:     name,
+		Value:    value,
+		Path:     path,
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
+		HttpOnly: true,
 	})
 }
