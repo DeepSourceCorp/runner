@@ -23,6 +23,7 @@ func RunnerHTTPErrorHandler(err error, c echo.Context) {
 		sentry.CaptureException(err)
 		_ = c.JSON(typedErr.Code, typedErr)
 	default:
+		slog.Error("unknown error", slog.Any("err", err))
 		sentry.CaptureException(err)
 		_ = c.JSON(http.StatusInternalServerError, httperror.ErrUnknown(err))
 	}
