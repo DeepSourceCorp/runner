@@ -7,6 +7,7 @@ import (
 
 	"github.com/deepsourcecorp/runner/httperror"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/exp/slog"
 )
 
 type UserRequest struct {
@@ -22,6 +23,7 @@ func NewUserRequest(c echo.Context) (*UserRequest, error) {
 	authorization := c.Request().Header.Get("Authorization")
 	parts := strings.Split(authorization, " ")
 	if len(parts) != 2 || parts[0] != "Bearer" {
+		slog.Error("invalid authorization header", "header", authorization)
 		return nil, httperror.ErrBadRequest(errors.New("invalid authorization header"))
 	}
 
@@ -36,6 +38,7 @@ func NewUserRequest(c echo.Context) (*UserRequest, error) {
 
 func (r *UserRequest) validate() error {
 	if r.AppID == "" || r.AccessToken == "" {
+		slog.Error("user request missing mandatory params")
 		return httperror.ErrBadRequest(errors.New("missing params"))
 	}
 	return nil

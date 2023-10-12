@@ -53,6 +53,7 @@ func LoadConfig() (*config.Config, error) {
 func SetLogLevel() {
 	if Debug {
 		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug})))
+		slog.Info("debug logging enabled")
 	}
 }
 
