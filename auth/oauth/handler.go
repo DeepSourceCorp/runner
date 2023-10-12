@@ -136,6 +136,7 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 }
 
 func (h *Handler) HandleUser(c echo.Context) error {
+	slog.Debug("handling user request")
 	req, err := contract.NewUserRequest(c)
 	if err != nil {
 		slog.Error("failed to parse user request", slog.Any("err", err))
