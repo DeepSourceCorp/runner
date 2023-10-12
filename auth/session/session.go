@@ -65,12 +65,16 @@ func (s *Session) GetBackendToken(v interface{}) error {
 
 func (s *Session) SetRunnerToken(r *common.Runner) error {
 	accessToken, err := r.IssueToken(
-		ScopeCode, map[string]interface{}{}, ExpiryRunnerAccessToken)
+		ScopeCode, map[string]interface{}{
+			ClaimSessionID: s.ID,
+		}, ExpiryRunnerAccessToken)
 	if err != nil {
 		return fmt.Errorf("failed to issue runner access token: %w", err)
 	}
 	refreshToken, err := r.IssueToken(
-		ScopeRefresh, map[string]interface{}{}, ExpiryRunnerRefreshToken)
+		ScopeRefresh, map[string]interface{}{
+			ClaimSessionID: s.ID,
+		}, ExpiryRunnerRefreshToken)
 	if err != nil {
 		return fmt.Errorf("failed to issue runner refresh token: %w", err)
 	}

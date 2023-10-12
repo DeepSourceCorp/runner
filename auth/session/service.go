@@ -8,6 +8,7 @@ import (
 	"github.com/deepsourcecorp/runner/httperror"
 	"github.com/deepsourcecorp/runner/jwtutil"
 	"github.com/segmentio/ksuid"
+	"golang.org/x/exp/slog"
 )
 
 const (
@@ -38,12 +39,12 @@ func (s *Service) CreateSession(token interface{}) (*Session, error) {
 		return nil, fmt.Errorf("failed to set backend token, %w", err)
 	}
 
-	if err := s.sessionStore.Create(session); err != nil {
-		return nil, fmt.Errorf("failed to create session, %w", err)
-	}
-
 	if err := session.SetRunnerToken(s.Runner); err != nil {
 		return nil, fmt.Errorf("failed to set runner token, %w", err)
+	}
+
+	if err := s.sessionStore.Create(session); err != nil {
+		return nil, fmt.Errorf("failed to create session, %w", err)
 	}
 
 	return session, nil
@@ -112,6 +113,7 @@ func (s *Service) FetchSessionByJWT(token string, expectedScope string) (*Sessio
 
 	session, err := s.sessionStore.Get(sessionID)
 	if err != nil {
+		slog.Error("failed to fetch session", slog.Any("err", err))
 		return nil, httperror.ErrUnknown(err)
 	}
 
