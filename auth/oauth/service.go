@@ -115,25 +115,25 @@ func (s *Service) RefreshOAuthToken(req *contract.RefreshRequest) (*session.Sess
 func (s *Service) GetUser(req *contract.UserRequest) (*common.User, error) {
 	session, err := s.sessionService.FetchSessionByJWT(req.AccessToken, session.ScopeCode)
 	if err != nil {
-		slog.Error("failed to fetch session by jwt", slog.Any("err", err))
+		common.Log(req.Ctx, slog.LevelError, "failed to fetch session", slog.Any("err", err))
 		return nil, err
 	}
 
 	token := new(oauth2.Token)
-	if err = session.GetBackendToken(token); err != nil {
-		slog.Error("failed to get backend token", slog.Any("err", err))
+	if err = session.GetBackendToken(req.Ctx, token); err != nil {
+		common.Log(req.Ctx, slog.LevelError, "failed to get backend token", slog.Any("err", err))
 		return nil, err
 	}
 
 	provider, err := s.apps.GetProvider(session.AppID)
 	if err != nil {
-		slog.Error("failed to get provider", slog.Any("err", err))
+		common.Log(req.Ctx, slog.LevelError, "failed to get provider", slog.Any("err", err))
 		return nil, err
 	}
 
 	user, err := provider.GetUser(req.Ctx, token)
 	if err != nil {
-		slog.Error("failed to get user", slog.Any("err", err))
+		common.Log(req.Ctx, slog.LevelError, "failed to get user", slog.Any("err", err))
 		return nil, httperror.ErrUnknown(err) // TODO: Handle upstream error types.
 	}
 
@@ -147,7 +147,7 @@ func (s *Service) refreshBackendToken(ctx context.Context, appID string, session
 	}
 
 	token := new(oauth2.Token)
-	if err := session.GetBackendToken(token); err != nil {
+	if err := session.GetBackendToken(ctx, token); err != nil {
 		return nil, err
 	}
 

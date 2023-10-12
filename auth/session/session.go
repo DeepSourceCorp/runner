@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -55,13 +56,13 @@ func (s *Session) SetBackendToken(token interface{}) error {
 	return nil
 }
 
-func (s *Session) GetBackendToken(v interface{}) error {
+func (s *Session) GetBackendToken(ctx context.Context, v interface{}) error {
 	switch t := v.(type) {
 	case *oauth2.Token:
-		slog.Error("failed to unmarshal oauth token", slog.Any("token", s.BackendToken))
+		common.Log(ctx, slog.LevelError, "failed to unmarshal token")
 		return json.Unmarshal([]byte(s.BackendToken), t)
 	default:
-		slog.Error("unknown backend type", slog.Any("type", t))
+		common.Log(ctx, slog.LevelError, "unknown backend type")
 		return fmt.Errorf("unknown backend type: %s", t)
 	}
 }

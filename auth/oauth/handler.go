@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"github.com/deepsourcecorp/runner/auth/contract"
 	"github.com/deepsourcecorp/runner/httperror"
 	"github.com/labstack/echo/v4"
+	"github.com/segmentio/ksuid"
 	"golang.org/x/exp/slog"
 )
 
@@ -136,16 +138,17 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 }
 
 func (h *Handler) HandleUser(c echo.Context) error {
-	slog.Debug("handling user request")
+	ctx := context.WithValue(c.Request().Context(), common.ContextKeyRequestID, ksuid.New().String())
 	req, err := contract.NewUserRequest(c)
 	if err != nil {
-		slog.Error("failed to parse user request", slog.Any("err", err))
+		common.Log(ctx, slog.LevelError, "failed to parse user request", slog.Any("err", err))
 		return httperror.ErrBadRequest(err)
 	}
+	req.Ctx = ctx
 
 	user, err := h.service.GetUser(req)
 	if err != nil {
-		slog.Error("failed to get user", slog.Any("err", err))
+		common.Log(ctx, slog.LevelError, "failed to get user", slog.Any("err", err))
 		return err
 	}
 
