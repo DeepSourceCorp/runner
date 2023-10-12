@@ -10,6 +10,7 @@ import (
 	"github.com/deepsourcecorp/runner/auth/contract"
 	"github.com/deepsourcecorp/runner/httperror"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/exp/slog"
 )
 
 const (
@@ -66,11 +67,12 @@ func (h *Handler) HandleCallback(c echo.Context) error {
 func (h *Handler) HandleSession(c echo.Context) error {
 	req, err := NewSessionRequest(c)
 	if err != nil {
+		slog.Error("failed to parse session request", slog.Any("err", err))
 		return httperror.ErrBadRequest(err)
 	}
-
 	session, err := h.service.GenerateAccessCode(req)
 	if err != nil {
+		slog.Error("failed to generate access code", slog.Any("err", err))
 		return err
 	}
 
