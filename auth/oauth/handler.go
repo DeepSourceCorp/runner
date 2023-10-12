@@ -32,7 +32,7 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) HandleAuthorize(c echo.Context) error {
 	req, err := contract.NewAuthorizationRequest(c)
 	if err != nil {
-		return err
+		return httperror.ErrBadRequest(err)
 	}
 	url, err := h.service.GetAuthorizationURL(req)
 	if err != nil {
@@ -45,7 +45,7 @@ func (h *Handler) HandleAuthorize(c echo.Context) error {
 func (h *Handler) HandleCallback(c echo.Context) error {
 	req, err := NewCallbackRequest(c)
 	if err != nil {
-		return err
+		return httperror.ErrBadRequest(err)
 	}
 
 	session, err := h.service.CreateSession(req)

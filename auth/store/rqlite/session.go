@@ -26,6 +26,7 @@ func (s *SessionStore) Create(session *session.Session) error {
 	if err != nil {
 		return fmt.Errorf("persistence/rqlite: failed to build query for insert: %w", err)
 	}
+
 	_, err = s.db.WriteOneParameterized(
 		gorqlite.ParameterizedStatement{
 			Query:     query,
@@ -44,7 +45,7 @@ func (s *SessionStore) Update(session *session.Session) error {
 		Set("code", session.Code).
 		Set("backend_token", session.BackendToken).
 		Set("runner_access_token", session.RunnerAccessToken).
-		Set("runner_access_token_expires_at", session.RunnerTokenExpiry).
+		Set("runner_token_expiry", session.RunnerTokenExpiry).
 		Set("runner_refresh_token", session.RunnerRefreshToken).
 		Where(squirrel.Eq{"id": session.ID})
 	query, args, err := builder.ToSql()
