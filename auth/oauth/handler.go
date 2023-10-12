@@ -77,16 +77,18 @@ func (h *Handler) HandleSession(c echo.Context) error {
 		return err
 	}
 
-	return c.Redirect(
-		http.StatusTemporaryRedirect,
-		h.service.DeepSourceCallbackURL(
-			url.Values{
-				"code":   {session.Code},
-				"state":  {req.State},
-				"app_id": {req.AppID},
-			},
-		),
+	url := h.service.DeepSourceCallbackURL(
+		url.Values{
+			"code":   {session.Code},
+			"state":  {req.State},
+			"app_id": {req.AppID},
+		},
 	)
+
+	slog.Debug("redirecting to deepsource callback url", slog.Any("url", url))
+
+	return c.Redirect(
+		http.StatusTemporaryRedirect, url)
 }
 
 func (h *Handler) HandleToken(c echo.Context) error {
