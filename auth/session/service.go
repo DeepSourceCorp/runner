@@ -2,176 +2,118 @@ package session
 
 import (
 	"fmt"
-	"strings"
-	"time"
+	"net/url"
 
+	"github.com/deepsourcecorp/runner/auth/common"
 	"github.com/deepsourcecorp/runner/httperror"
-	"github.com/deepsourcecorp/runner/model"
+	"github.com/deepsourcecorp/runner/jwtutil"
 	"github.com/segmentio/ksuid"
-	"golang.org/x/oauth2"
 )
 
 const (
-	ScopeCode    = "code"
-	ScopeRefresh = "refresh"
-	ScopeUser    = "user"
-
 	ClaimSessionID = "session_id"
-	ClaimScope     = "scope"
+	ClaimScope     = "scp"
 
-	TokenTypeBearer = "bearer"
-)
-
-var (
-	RefreshTokenExpiry = time.Hour * 24 * 30
+	// BifrostCallbackURLFmt is the callback path for DeepSource Cloud.
+	BifrostCallbackURLFmt = "/accounts/runner/apps/%s/login/callback/bifrost/"
 )
 
 type Service struct {
-	store Store
-
-	runner *model.Runner
+	*common.Runner
+	*common.DeepSource
+	sessionStore Store
 }
 
-func NewService(runner *model.Runner, store Store) *Service {
+func NewService(runner *common.Runner, deepsource *common.DeepSource, sessionStore Store) *Service {
 	return &Service{
-		runner: runner,
-		store:  store,
+		Runner:       runner,
+		DeepSource:   deepsource,
+		sessionStore: sessionStore,
 	}
 }
 
-func (s *Service) SetBackendToken(session *Session, token interface{}, expiry time.Time) error {
+func (s *Service) CreateSession(token interface{}) (*Session, error) {
+	session := NewSession()
 	if err := session.SetBackendToken(token); err != nil {
-		return fmt.Errorf("failed to set backend token, %w", err)
+		return nil, fmt.Errorf("failed to set backend token, %w", err)
 	}
-	session.ExpiresAt = expiry.Unix()
 
-	if err := s.store.Create(session); err != nil {
-		return fmt.Errorf("failed to create session, %w", err)
+	if err := s.sessionStore.Create(session); err != nil {
+		return nil, fmt.Errorf("failed to create session, %w", err)
 	}
-	return nil
+
+	if err := session.SetRunnerToken(s.Runner); err != nil {
+		return nil, fmt.Errorf("failed to set runner token, %w", err)
+	}
+
+	return session, nil
 }
 
-// GenerateTokenPair generates a session token and a refresh token for the given
-// session.
-func (s *Service) GenerateSessionTokens(session *Session) (string, string, error) {
-	expiry := time.Duration(session.ExpiresAt-time.Now().Unix()) * time.Second
-	signer := s.runner.Signer()
-
-	sessionToken, err := signer.GenerateToken(
-		s.runner.ID, []string{ScopeCode}, map[string]interface{}{
-			ClaimSessionID: session.ID,
-		}, expiry)
-
-	if err != nil {
-		return "", "", fmt.Errorf("failed to generate session token, %w", err)
+func (s *Service) GenerateAccessCode(session *Session) (*Session, error) {
+	session.Code = ksuid.New().String()
+	if err := s.sessionStore.Update(session); err != nil {
+		err := fmt.Errorf("failed to update session, %w", err)
+		return nil, httperror.ErrUnknown(err)
 	}
-
-	refreshToken, err := signer.GenerateToken(
-		s.runner.ID, []string{ScopeCode}, map[string]interface{}{
-			ClaimSessionID: session.ID,
-		}, RefreshTokenExpiry)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to generate refresh token, %w", err)
-	}
-
-	return sessionToken, refreshToken, nil
+	return session, nil
 }
 
-func (s *Service) ParseJWT(token string, scope string) (*Session, error) {
-	verifier := s.runner.Verifier()
-	claims, err := verifier.Verify(token)
+func (s *Service) GenerateOAuthToken(code string) (*Session, error) {
+	session, err := s.sessionStore.GetByCode(code)
 	if err != nil {
-		err := fmt.Errorf("failed to verify token, %w", err)
+		return nil, err
+	}
+	if err := session.SetRunnerToken(s.Runner); err != nil {
+		return nil, err
+	}
+
+	if err := s.sessionStore.Update(session); err != nil {
+		return nil, err
+	}
+
+	return session, nil
+}
+
+func (s *Service) RefreshOAuthToken(session *Session) (*Session, error) {
+	if err := session.SetRunnerToken(s.Runner); err != nil {
+		return nil, err
+	}
+
+	if err := s.sessionStore.Update(session); err != nil {
+		return nil, err
+	}
+	return session, nil
+}
+
+func (s *Service) DeepSourceCallBackURL(q url.Values) string {
+	u := (*s.DeepSource.BaseURL).JoinPath(BifrostCallbackURLFmt)
+	u.RawQuery = q.Encode()
+	return u.String()
+}
+
+// FetchSessionByJWT parses the JWT token and retrieves the session from the
+// underlying store.  It errors if the scope is invalid.
+func (s *Service) FetchSessionByJWT(token string, expectedScope string) (*Session, error) {
+	claims, err := s.ParseToken(token)
+	if err != nil {
+		return nil, httperror.ErrUnauthorized(err)
+	}
+
+	if !jwtutil.IsValidScope(claims, expectedScope) {
+		err := fmt.Errorf("invalid scope: %s", expectedScope)
 		return nil, httperror.ErrUnauthorized(err)
 	}
 
 	sessionID, ok := claims[ClaimSessionID].(string)
 	if !ok || sessionID == "" {
-		err := fmt.Errorf("invalid token")
+		err := fmt.Errorf("session id missing in jwt claim")
 		return nil, httperror.ErrUnauthorized(err)
 	}
 
-	session, err := s.store.Filter(&Filter{ID: sessionID})
+	session, err := s.sessionStore.Get(sessionID)
 	if err != nil {
-		err := fmt.Errorf("failed to get session, %w", err)
 		return nil, httperror.ErrUnknown(err)
 	}
 
-	if scope != "" {
-		scopeClaim := claims[ClaimScope].(string)
-		if scopeClaim == "" {
-			err := fmt.Errorf("invalid token")
-			return nil, httperror.ErrUnauthorized(err)
-		}
-
-		scopes := strings.Split(scopeClaim, " ")
-		for _, s := range scopes {
-			if s == scope {
-				return session, nil
-			}
-		}
-		return nil, httperror.ErrUnauthorized(fmt.Errorf("invalid scope"))
-	}
 	return session, nil
-}
-
-func (s *Service) GenerateAccessCode(session *Session) (string, error) {
-	code := ksuid.New().String()
-	session.Code = code
-	if err := s.store.Update(session); err != nil {
-		err := fmt.Errorf("failed to update session, %w", err)
-		return "", httperror.ErrUnknown(err)
-	}
-	return code, nil
-}
-
-func (s *Service) GetByAccessCode(code string) (*Session, error) {
-	session, err := s.store.Filter(&Filter{Code: code})
-	if err != nil {
-		err := fmt.Errorf("failed to get session, %w", err)
-		return nil, httperror.ErrUnknown(err)
-	}
-	return session, nil
-}
-
-// ------------------------------OAuthToken------------------------------------
-
-func (s *Service) GenerateOauthToken(session *Session) (*oauth2.Token, error) {
-	signer := s.runner.Signer()
-
-	accessToken, err := signer.GenerateToken(
-		s.runner.ID, []string{ScopeUser}, map[string]interface{}{
-			ClaimSessionID: session.ID,
-		}, time.Duration(session.ExpiresAt-time.Now().Unix())*time.Second)
-	if err != nil {
-		err := fmt.Errorf("failed to generate access token, %w", err)
-		return nil, httperror.ErrUnknown(err)
-	}
-
-	refreshToken, err := signer.GenerateToken(
-		s.runner.ID, []string{ScopeRefresh}, map[string]interface{}{
-			ClaimSessionID: session.ID,
-		}, RefreshTokenExpiry)
-	if err != nil {
-		err := fmt.Errorf("failed to generate refresh token, %w", err)
-		return nil, httperror.ErrUnknown(err)
-	}
-
-	token := &oauth2.Token{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		TokenType:    TokenTypeBearer,
-		Expiry:       time.Unix(session.ExpiresAt, 0),
-	}
-
-	if err := session.SetBackendToken(token); err != nil {
-		err := fmt.Errorf("failed to set backend token, %w", err)
-		return nil, httperror.ErrUnknown(err)
-	}
-
-	if err := s.store.Update(session); err != nil {
-		err := fmt.Errorf("failed to update session, %w", err)
-		return nil, httperror.ErrUnknown(err)
-	}
-	return token, nil
 }

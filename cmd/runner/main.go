@@ -92,12 +92,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	auth, err := GetAuthentiacator(ctx, c)
+	db, err := GetDB(c)
 	if err != nil {
 		sentry.CaptureException(err)
-		slog.Error("failed to initialize authentication app", slog.Any("err", err))
+		slog.Error("failed to initialize db", slog.Any("err", err))
 		os.Exit(1)
 	}
+
+	auth := GetOAuth(c, db)
 	auth.AddRoutes(r)
 
 	provider, err := GetProvider(ctx, c, http.DefaultClient)
@@ -114,7 +116,7 @@ func main() {
 		slog.Error("failed to initialize orchestrator", slog.Any("err", err))
 		os.Exit(1)
 	}
-	orchestrator.AddRoutes(r, []echo.MiddlewareFunc{auth.TokenMiddleware})
+	orchestrator.AddRoutes(r, []echo.MiddlewareFunc{}) // Add middleware
 
 	artifacts, err := GetArtifacts(ctx, c)
 	if err != nil {
@@ -122,7 +124,7 @@ func main() {
 		slog.Error("failed to initialize artifacts app", slog.Any("err", err))
 		os.Exit(1)
 	}
-	artifacts.AddRoutes(r, []echo.MiddlewareFunc{auth.SessionMiddleware})
+	artifacts.AddRoutes(r, []echo.MiddlewareFunc{}) // Add middleware
 
 	go orchestrator.Cleaner.Start(ctx)
 

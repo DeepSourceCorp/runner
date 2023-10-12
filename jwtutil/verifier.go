@@ -18,7 +18,7 @@ func NewVerifier(publicKey *rsa.PublicKey) *Verifier {
 	}
 }
 
-func (v *Verifier) Verify(tokenString string) (jwt.MapClaims, error) {
+func (v *Verifier) Verify(tokenString string) (map[string]interface{}, error) {
 	// Parse the token string
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Check the signing method

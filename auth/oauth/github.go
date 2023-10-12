@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/deepsourcecorp/runner/model"
+	"github.com/deepsourcecorp/runner/auth/common"
 	"golang.org/x/oauth2"
 )
 
@@ -28,11 +28,11 @@ type Github struct {
 	config *oauth2.Config
 	client *http.Client
 
-	authHost url.URL
-	apiHost  url.URL
+	authHost *url.URL
+	apiHost  *url.URL
 }
 
-func NewGithub(app *App) Backend {
+func NewGithub(app *App) Provider {
 	return &Github{
 		config: &oauth2.Config{
 			ClientID:     app.ClientID,
@@ -56,6 +56,7 @@ func (g *Github) AuthorizationURL(state string, scopes []string) string {
 }
 
 func (g *Github) GetToken(ctx context.Context, code string) (*oauth2.Token, error) {
+	fmt.Println(g.config)
 	token, err := g.config.Exchange(ctx, code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange code for token: %w", err)
@@ -83,8 +84,8 @@ type GithubUserResponse struct {
 	Name  string `json:"name"`
 }
 
-func (r *GithubUserResponse) ToModel() *model.User {
-	return &model.User{
+func (r *GithubUserResponse) ToModel() *common.User {
+	return &common.User{
 		ID:    strconv.Itoa(r.ID),
 		Email: r.Email,
 		Login: r.Login,
@@ -92,7 +93,7 @@ func (r *GithubUserResponse) ToModel() *model.User {
 	}
 }
 
-func (g *Github) GetUser(ctx context.Context, token *oauth2.Token) (*model.User, error) {
+func (g *Github) GetUser(ctx context.Context, token *oauth2.Token) (*common.User, error) {
 	url := g.apiHost.JoinPath(GithubURLUser).String()
 	req, err := http.NewRequestWithContext(
 		ctx,

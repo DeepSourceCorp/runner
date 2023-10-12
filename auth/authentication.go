@@ -1,9 +1,10 @@
-package auth
+package authentication
 
 import (
 	"net/http"
 
 	"github.com/deepsourcecorp/runner/auth/oauth"
+	"github.com/deepsourcecorp/runner/auth/session"
 	"github.com/labstack/echo/v4"
 )
 
@@ -12,7 +13,17 @@ type Router interface {
 }
 
 type Facade struct {
-	oauthHandler *oauth.Handler
+	oauthHandler      *oauth.Handler
+	sessionHandler    *oauth.Handler
+	sessionMiddleware *session.Middleware
+}
+
+func InitializeFacade(oauthHandler *oauth.Handler, sessionHandler *oauth.Handler, sessionMiddleware *session.Middleware) *Facade {
+	return &Facade{
+		oauthHandler:      oauthHandler,
+		sessionHandler:    sessionHandler,
+		sessionMiddleware: sessionMiddleware,
+	}
 }
 
 func (f *Facade) AddRoutes(r Router) Router {

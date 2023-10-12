@@ -1,4 +1,4 @@
-package model
+package common
 
 type User struct {
 	ID       string `json:"id"`

@@ -1,13 +1,8 @@
 package session
 
-type Filter struct {
-	ID           string
-	Code         string
-	RefreshToken string
-}
-
 type Store interface {
-	Create(session *Session) error
-	Update(session *Session) error
-	Filter(filter *Filter) (*Session, error)
+	Create(*Session) error
+	Update(*Session) error
+	Get(id string) (*Session, error)
+	GetByCode(code string) (*Session, error)
 }

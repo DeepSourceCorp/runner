@@ -1,14 +1,15 @@
 package migrations
 
 const (
-	Up002 = `CREATE TABLE oauth_session (
+	Up002 = `CREATE TABLE session (
 		id TEXT PRIMARY KEY,
-		backend_access_token TEXT,
-		backend_access_token_expires_at INTEGER,
-		backend_refresh_token TEXT,
+		app_id TEXT,
 		code TEXT,
+
+		backend_token TEXT,
+		
 		runner_access_token TEXT,
-		runner_access_token_expires_at INTEGER,
+		runner_token_expiry INTEGER,
 		runner_refresh_token TEXT
 	);
 	`
