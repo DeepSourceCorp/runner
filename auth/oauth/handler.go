@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -72,7 +73,7 @@ func (h *Handler) HandleSession(c echo.Context) error {
 	}
 	session, err := h.service.GenerateAccessCode(req)
 	if err != nil {
-		slog.Error("failed to generate access code", slog.Any("err", err))
+		slog.Error("failed to generate access code", slog.Any("err", errors.Unwrap(err)))
 		return err
 	}
 
