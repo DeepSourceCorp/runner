@@ -77,7 +77,7 @@ func (h *Handler) HandleSession(c echo.Context) error {
 		return err
 	}
 
-	url := h.service.DeepSourceCallbackURL(
+	url := h.service.DeepSourceCallbackURL(req.AppID,
 		url.Values{
 			"code":   {session.Code},
 			"state":  {req.State},

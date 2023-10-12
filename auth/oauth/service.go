@@ -14,7 +14,7 @@ import (
 type Service struct {
 	apps                  Apps
 	sessionService        *session.Service
-	DeepSourceCallbackURL func(url.Values) string
+	DeepSourceCallbackURL func(string, url.Values) string
 }
 
 func NewService(apps map[string]*App, sessionService *session.Service) *Service {

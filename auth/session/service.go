@@ -86,8 +86,9 @@ func (s *Service) RefreshOAuthToken(session *Session) (*Session, error) {
 	return session, nil
 }
 
-func (s *Service) DeepSourceCallBackURL(q url.Values) string {
-	u := (*s.DeepSource.BaseURL).JoinPath(BifrostCallbackURLFmt)
+func (s *Service) DeepSourceCallBackURL(appID string, q url.Values) string {
+	path := fmt.Sprintf(BifrostCallbackURLFmt, appID)
+	u := (*s.DeepSource.BaseURL).JoinPath(path)
 	u.RawQuery = q.Encode()
 	return u.String()
 }
