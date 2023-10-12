@@ -40,13 +40,13 @@ func (s *Service) GetAuthorizationURL(req *contract.AuthorizationRequest) (strin
 	return provider.AuthorizationURL(req.State, req.Scopes), nil
 }
 
-func (s *Service) CreateSession(req *CallbackRequest) (*session.Session, error) {
+func (s *Service) CreateSession(ctx context.Context, req *contract.CallbackRequest) (*session.Session, error) {
 	provider, err := s.apps.GetProvider(req.AppID)
 	if err != nil {
 		return nil, err
 	}
 
-	token, err := provider.GetToken(req.Ctx, req.Code)
+	token, err := provider.GetToken(ctx, req.Code)
 	if err != nil {
 		return nil, httperror.ErrUnknown(err) // TODO: Handle upstream error types.
 	}

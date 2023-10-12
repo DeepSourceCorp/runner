@@ -45,12 +45,13 @@ func (h *Handler) HandleAuthorize(c echo.Context) error {
 }
 
 func (h *Handler) HandleCallback(c echo.Context) error {
-	req, err := NewCallbackRequest(c)
+	req, err := contract.NewCallbackRequest(c)
 	if err != nil {
 		return httperror.ErrBadRequest(err)
 	}
+	ctx := context.WithValue(c.Request().Context(), common.ContextKeyRequestID, ksuid.New().String())
 
-	session, err := h.service.CreateSession(req)
+	session, err := h.service.CreateSession(ctx, req)
 	if err != nil {
 		return err
 	}

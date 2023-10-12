@@ -129,13 +129,12 @@ func TestOAuthService_CreateSession(t *testing.T) {
 	oauthService := service()
 
 	t.Run("should return session", func(t *testing.T) {
-		req := &CallbackRequest{
+		req := &contract.CallbackRequest{
 			AppID: "app-id",
 			Code:  "code",
-			Ctx:   context.Background(),
 		}
 
-		got, err := oauthService.CreateSession(req)
+		got, err := oauthService.CreateSession(context.Background(), req)
 
 		require.NoError(t, err, errors.Unwrap(err))
 		assert.NotEmpty(t, got.ID)
@@ -144,13 +143,12 @@ func TestOAuthService_CreateSession(t *testing.T) {
 	})
 
 	t.Run("should return error if app id is invalid", func(t *testing.T) {
-		req := &CallbackRequest{
+		req := &contract.CallbackRequest{
 			AppID: "invalid-provider-app-id",
 			Code:  "code",
-			Ctx:   context.Background(),
 		}
 
-		got, err := oauthService.CreateSession(req)
+		got, err := oauthService.CreateSession(context.Background(), req)
 
 		require.Error(t, err)
 		assert.Nil(t, got)

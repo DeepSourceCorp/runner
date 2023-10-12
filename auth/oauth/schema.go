@@ -1,7 +1,6 @@
 package oauth
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -10,32 +9,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
 )
-
-type CallbackRequest struct {
-	Ctx   context.Context
-	AppID string `param:"app_id"`
-	Code  string `query:"code"`
-	State string `query:"state"`
-}
-
-func NewCallbackRequest(c echo.Context) (*CallbackRequest, error) {
-	req := &CallbackRequest{}
-	if err := c.Bind(req); err != nil {
-		return nil, fmt.Errorf("callback request bind error: %w", err)
-	}
-	if err := req.Validate(); err != nil {
-		return nil, err
-	}
-	req.Ctx = c.Request().Context()
-	return req, nil
-}
-
-func (r *CallbackRequest) Validate() error {
-	if r.AppID == "" || r.Code == "" || r.State == "" {
-		return errors.New("callback request validation failed")
-	}
-	return nil
-}
 
 type SessionRequest struct {
 	AppID        string `param:"app_id"`
