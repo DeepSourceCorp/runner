@@ -26,5 +26,4 @@ func TestService_DeepSourceCallBackURL(t *testing.T) {
 	assert.Equal(t, "/accounts/runner/apps/app-id-1/login/callback/bifrost/", u.Path)
 	assert.Equal(t, "value", u.Query().Get("key"))
 	assert.Equal(t, "https://deepsource.io", u.Scheme+"://"+u.Host)
-
 }

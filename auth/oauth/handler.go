@@ -138,11 +138,13 @@ func (h *Handler) HandleRefresh(c echo.Context) error {
 func (h *Handler) HandleUser(c echo.Context) error {
 	req, err := contract.NewUserRequest(c)
 	if err != nil {
+		slog.Error("failed to parse user request", slog.Any("err", err))
 		return httperror.ErrBadRequest(err)
 	}
 
 	user, err := h.service.GetUser(req)
 	if err != nil {
+		slog.Error("failed to get user", slog.Any("err", err))
 		return err
 	}
 

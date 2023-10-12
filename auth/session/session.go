@@ -7,6 +7,7 @@ import (
 
 	"github.com/deepsourcecorp/runner/auth/common"
 	"github.com/segmentio/ksuid"
+	"golang.org/x/exp/slog"
 	"golang.org/x/oauth2"
 )
 
@@ -57,8 +58,10 @@ func (s *Session) SetBackendToken(token interface{}) error {
 func (s *Session) GetBackendToken(v interface{}) error {
 	switch t := v.(type) {
 	case *oauth2.Token:
+		slog.Error("failed to unmarshal oauth token", slog.Any("token", s.BackendToken))
 		return json.Unmarshal([]byte(s.BackendToken), t)
 	default:
+		slog.Error("unknown backend type", slog.Any("type", t))
 		return fmt.Errorf("unknown backend type: %s", t)
 	}
 }

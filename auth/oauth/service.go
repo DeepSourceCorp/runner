@@ -8,6 +8,7 @@ import (
 	"github.com/deepsourcecorp/runner/auth/contract"
 	"github.com/deepsourcecorp/runner/auth/session"
 	"github.com/deepsourcecorp/runner/httperror"
+	"golang.org/x/exp/slog"
 	"golang.org/x/oauth2"
 )
 
@@ -114,21 +115,25 @@ func (s *Service) RefreshOAuthToken(req *contract.RefreshRequest) (*session.Sess
 func (s *Service) GetUser(req *contract.UserRequest) (*common.User, error) {
 	session, err := s.sessionService.FetchSessionByJWT(req.AccessToken, session.ScopeCode)
 	if err != nil {
+		slog.Error("failed to fetch session by jwt", slog.Any("err", err))
 		return nil, err
 	}
 
 	token := new(oauth2.Token)
 	if err = session.GetBackendToken(token); err != nil {
+		slog.Error("failed to get backend token", slog.Any("err", err))
 		return nil, err
 	}
 
 	provider, err := s.apps.GetProvider(session.AppID)
 	if err != nil {
+		slog.Error("failed to get provider", slog.Any("err", err))
 		return nil, err
 	}
 
 	user, err := provider.GetUser(req.Ctx, token)
 	if err != nil {
+		slog.Error("failed to get user", slog.Any("err", err))
 		return nil, httperror.ErrUnknown(err) // TODO: Handle upstream error types.
 	}
 
