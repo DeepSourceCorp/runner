@@ -33,11 +33,13 @@ func NewService(runner *common.Runner, deepsource *common.DeepSource, sessionSto
 	}
 }
 
-func (s *Service) CreateSession(token interface{}) (*Session, error) {
+func (s *Service) CreateSession(appID string, token interface{}) (*Session, error) {
 	session := NewSession()
 	if err := session.SetBackendToken(token); err != nil {
 		return nil, fmt.Errorf("failed to set backend token, %w", err)
 	}
+
+	session.AppID = appID
 
 	if err := session.SetRunnerToken(s.Runner); err != nil {
 		return nil, fmt.Errorf("failed to set runner token, %w", err)

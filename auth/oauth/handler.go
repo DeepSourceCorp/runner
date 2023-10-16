@@ -41,7 +41,7 @@ func (h *Handler) HandleAuthorize(c echo.Context) error {
 		return err
 	}
 
-	return c.Redirect(302, url)
+	return c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
 func (h *Handler) HandleCallback(c echo.Context) error {

@@ -51,7 +51,7 @@ func (s *Service) CreateSession(ctx context.Context, req *contract.CallbackReque
 		return nil, httperror.ErrUnknown(err) // TODO: Handle upstream error types.
 	}
 
-	session, err := s.sessionService.CreateSession(token)
+	session, err := s.sessionService.CreateSession(req.AppID, token)
 	if err != nil {
 		return nil, err
 	}
