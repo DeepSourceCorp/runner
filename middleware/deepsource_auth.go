@@ -9,7 +9,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func DeepSourceAuthMiddleware(runnerID string, verifier *jwtutil.Verifier) echo.MiddlewareFunc {
+func DeepSourceMiddleware(runnerID string, verifier *jwtutil.Verifier) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authrorization := c.Request().Header.Get("Authorization")

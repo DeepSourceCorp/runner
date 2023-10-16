@@ -111,13 +111,14 @@ func main() {
 	}
 	provider.AddRoutes(r)
 
+	m := DeepSourceMiddleware(c)
 	orchestrator, err := GetOrchestrator(ctx, c, provider.Adapter, Driver)
 	if err != nil {
 		sentry.CaptureException(err)
 		slog.Error("failed to initialize orchestrator", slog.Any("err", err))
 		os.Exit(1)
 	}
-	orchestrator.AddRoutes(r, []echo.MiddlewareFunc{}) // Add middleware
+	orchestrator.AddRoutes(r, []echo.MiddlewareFunc{m}) // Add middleware
 
 	artifacts, err := GetArtifacts(ctx, c)
 	if err != nil {
