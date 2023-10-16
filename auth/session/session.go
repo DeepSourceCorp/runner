@@ -59,8 +59,12 @@ func (s *Session) SetBackendToken(token interface{}) error {
 func (s *Session) GetBackendToken(ctx context.Context, v interface{}) error {
 	switch t := v.(type) {
 	case *oauth2.Token:
-		common.Log(ctx, slog.LevelError, "failed to unmarshal token")
-		return json.Unmarshal([]byte(s.BackendToken), t)
+		err := json.Unmarshal([]byte(s.BackendToken), t)
+		if err != nil {
+			common.Log(ctx, slog.LevelError, "failed to unmarshal token", slog.Any("err", err))
+			return fmt.Errorf("failed to unmarshal token: %w", err)
+		}
+		return nil
 	default:
 		common.Log(ctx, slog.LevelError, "unknown backend type")
 		return fmt.Errorf("unknown backend type: %s", t)
