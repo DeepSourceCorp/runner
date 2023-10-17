@@ -18,6 +18,8 @@ func (a *App) GetProvider() (Provider, error) {
 	switch a.Provider {
 	case ProviderGithub:
 		return NewGithub(a), nil
+	case ProviderGitlab:
+		return NewGitlab(a), nil
 	}
 	return nil, errors.New("invalid provider")
 }

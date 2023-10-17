@@ -56,7 +56,6 @@ func (g *Github) AuthorizationURL(state string, scopes []string) string {
 }
 
 func (g *Github) GetToken(ctx context.Context, code string) (*oauth2.Token, error) {
-	fmt.Println(g.config)
 	token, err := g.config.Exchange(ctx, code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange code for token: %w", err)
@@ -132,7 +131,7 @@ func (g *Github) GetUser(ctx context.Context, token *oauth2.Token) (*common.User
 	}
 	user := u.ToModel()
 	user.Provider = ProviderGithub
-	return u.ToModel(), nil
+	return user, nil
 }
 
 type GithubEmail struct {

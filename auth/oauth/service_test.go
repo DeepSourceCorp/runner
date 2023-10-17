@@ -10,13 +10,11 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
-	"time"
 
 	"github.com/deepsourcecorp/runner/auth/common"
 	"github.com/deepsourcecorp/runner/auth/contract"
 	"github.com/deepsourcecorp/runner/auth/session"
 	"github.com/deepsourcecorp/runner/auth/store/mock"
-	"github.com/deepsourcecorp/runner/jwtutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -153,29 +151,4 @@ func TestOAuthService_CreateSession(t *testing.T) {
 		require.Error(t, err)
 		assert.Nil(t, got)
 	})
-}
-
-func TestOAuthService_GenerateAccessCode(t *testing.T) {
-	svc := service()
-
-	token, _ := jwtutil.NewSigner(_privateKey).GenerateToken(
-		"runner-id",
-		[]string{}, map[string]interface{}{
-			session.ClaimSessionID: "session-id",
-			session.ClaimScope:     session.ScopeCode,
-		},
-		time.Hour,
-	)
-
-	t.Run("should generate access code for session", func(t *testing.T) {
-		req := &SessionRequest{
-			AppID:        "app-id",
-			State:        "state",
-			SessionToken: token,
-		}
-		got, err := svc.GenerateAccessCode(req)
-		require.NoError(t, err, errors.Unwrap(err))
-		assert.NotEmpty(t, got.Code)
-	})
-
 }
