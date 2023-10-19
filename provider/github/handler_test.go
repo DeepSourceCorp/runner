@@ -51,7 +51,7 @@ func TestHandler_HandleAPI(t *testing.T) {
 			Client: http.DefaultClient,
 		})
 
-		handler := NewHandler(service)
+		handler := NewHandler(service, service.client)
 		err := handler.HandleAPI(c)
 		assert.NoError(t, err)
 
