@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deepsourcecorp/runner/auth/jwtutil"
 	"github.com/deepsourcecorp/runner/config"
+	"github.com/deepsourcecorp/runner/jwtutil"
 	"github.com/deepsourcecorp/runner/orchestrator"
 )
 

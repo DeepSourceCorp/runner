@@ -4,7 +4,7 @@ dev: clean
 	go build -o ./bin/runner cmd/runner/*.go
 
 build:
-	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o runner cmd/runner/*.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o runner cmd/runner/*.go
 
 clean:
 	@if [ -d "./bin" ]; then \

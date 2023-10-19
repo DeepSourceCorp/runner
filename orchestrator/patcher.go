@@ -42,7 +42,7 @@ func NewPatcherTask(runner *Runner, opts *TaskOpts, driver Driver, provider Prov
 // PatcherTask.Run creates a new patcher job based on the data passed to it
 // and then triggers that job using the specified driver in the task.
 func (p *PatcherTask) Run(ctx context.Context, req *PatcherRunRequest) error {
-	remoteURL, err := p.provider.AuthenticatedRemoteURL(req.AppID, req.InstallationID, req.Run.VCSMeta.RemoteURL)
+	remoteURL, err := p.provider.RemoteURL(req.AppID, req.Run.VCSMeta.RemoteURL, map[string]interface{}{"installation_id": req.InstallationID})
 	if err != nil {
 		return err
 	}

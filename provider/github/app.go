@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/deepsourcecorp/runner/internal/signer"
@@ -21,6 +22,11 @@ type App struct {
 	BaseHost      url.URL
 	APIHost       url.URL
 	PrivateKey    *rsa.PrivateKey
+}
+
+func (a *App) StripAPIURL(path string) *url.URL {
+	prefix := fmt.Sprintf("/apps/%s/api/", a.ID)
+	return a.APIHost.JoinPath(strings.TrimPrefix(path, prefix))
 }
 
 // Generate a JWT token for the GitHub App.

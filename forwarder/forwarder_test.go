@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProxy(t *testing.T) {
+func TestForward(t *testing.T) {
 	body := []byte("test-body")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -37,13 +37,11 @@ func TestProxy(t *testing.T) {
 	extraHeaders := http.Header{}
 	extraHeaders.Set("Extra-Header", "extra-header-value")
 
-	forwarder := New(http.DefaultClient)
-
-	res, err := forwarder.Forward(in, &Opts{
-		TargetURL: *serverURL,
+	res, err := Forward(in, &Opts{
+		TargetURL: serverURL,
 		Headers:   extraHeaders,
 		Query:     map[string][]string{"extra-query": {"2"}},
-	})
+	}, http.DefaultClient)
 
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode)

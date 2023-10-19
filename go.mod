@@ -3,13 +3,12 @@ module github.com/deepsourcecorp/runner
 go 1.20
 
 require (
-	github.com/DataDog/zstd v1.5.5
 	github.com/DeepSourceCorp/artifacts v0.0.0-20230823082625-b899aa7b55f8
-	github.com/Masterminds/squirrel v1.5.4
 	github.com/getsentry/sentry-go v0.22.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.1
+	github.com/klauspost/compress v1.17.0
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/pelletier/go-toml v1.9.5
 	github.com/segmentio/ksuid v1.0.4
@@ -22,24 +21,18 @@ require (
 )
 
 require (
-	github.com/beevik/etree v1.1.0 // indirect
-	github.com/crewjam/httperr v0.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/s2a-go v0.1.5 // indirect
-	github.com/jonboulle/clockwork v0.2.2 // indirect
-	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
-	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v7 v7.0.62 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
-	github.com/russellhaering/goxmldsig v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230822172742-b8732ec3820d // indirect
@@ -53,7 +46,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v1.1.2 // indirect
 	cloud.google.com/go/storage v1.32.0 // indirect
-	github.com/crewjam/saml v0.4.13
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect

@@ -36,7 +36,7 @@ func NewAutofixTask(runner *Runner, opts *TaskOpts, driver Driver, provider Prov
 }
 
 func (t *AutofixTask) Run(ctx context.Context, req *AutofixRunRequest) error {
-	remoteURL, err := t.provider.AuthenticatedRemoteURL(req.AppID, req.InstallationID, req.Run.VCSMeta.RemoteURL)
+	remoteURL, err := t.provider.RemoteURL(req.AppID, req.Run.VCSMeta.RemoteURL, map[string]interface{}{"installation_id": req.InstallationID})
 	if err != nil {
 		return err
 	}

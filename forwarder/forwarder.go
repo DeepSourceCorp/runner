@@ -11,20 +11,12 @@ import (
 )
 
 type Opts struct {
-	TargetURL url.URL
+	TargetURL *url.URL
 	Headers   http.Header
 	Query     url.Values
 }
 
-type Forwarder struct {
-	client *http.Client
-}
-
-func New(client *http.Client) *Forwarder {
-	return &Forwarder{client: client}
-}
-
-func (f *Forwarder) Forward(req *http.Request, opts *Opts) (*http.Response, error) {
+func Forward(req *http.Request, opts *Opts, client *http.Client) (*http.Response, error) {
 	defer req.Body.Close()
 	ctx := req.Context()
 
@@ -53,7 +45,7 @@ func (f *Forwarder) Forward(req *http.Request, opts *Opts) (*http.Response, erro
 	removeHopHeaders(out.Header)
 	removeCloudflareHeaders(out.Header)
 
-	res, err := f.client.Do(out)
+	res, err := client.Do(out)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make target request: %w", err)
 	}
