@@ -25,6 +25,10 @@ var (
 		return New(http.StatusInternalServerError, "unknown error", err)
 	}
 
+	ErrUnsupported = func(err error) *Error {
+		return New(http.StatusNotImplemented, "unsupported", err)
+	}
+
 	ErrMissingParams = func(err error) *Error {
 		return New(http.StatusBadRequest, "mandatory parameters are missing or invalid", err)
 	}

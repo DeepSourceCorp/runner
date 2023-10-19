@@ -6,17 +6,8 @@ import (
 )
 
 const (
-	HeaderGithubSignature = "x-hub-signature-256"
-	HeaderRunnerSignature = "x-deepsource-signature-256"
-	HeaderRunnerID        = "x-deepsource-runner-id"
-	HeaderAppID           = "x-deepsource-app-id"
-	HeaderInstallationID  = "X-Installation-Id"
-
-	HeaderContentType    = "Content-Type"
-	HeaderAuthorization  = "Authorization"
-	HeaderAccept         = "Accept"
-	HeaderAcceptEncoding = "Accept-Encoding"
-
+	HeaderGithubSignature   = "x-hub-signature-256"
+	HeaderInstallationID    = "X-Installation-Id"
 	HeaderValueGithubAccept = "application/vnd.github+json"
 )
 

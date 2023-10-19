@@ -1,5 +1,5 @@
 package orchestrator
 
 type Provider interface {
-	AuthenticatedRemoteURL(appID, installationID string, srcURL string) (string, error)
+	RemoteURL(appID string, sourceURL string, extra map[string]interface{}) (string, error)
 }

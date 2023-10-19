@@ -103,7 +103,7 @@ func main() {
 	auth := GetOAuth(c, db)
 	auth.AddRoutes(r)
 
-	provider, err := GetProvider(ctx, c, http.DefaultClient)
+	provider := GetProvider(ctx, c, http.DefaultClient)
 	if err != nil {
 		sentry.CaptureException(err)
 		slog.Error("failed to initialize provider", slog.Any("err", err))
@@ -112,7 +112,7 @@ func main() {
 	provider.AddRoutes(r)
 
 	m := DeepSourceMiddleware(c)
-	orchestrator, err := GetOrchestrator(ctx, c, provider.Adapter, Driver)
+	orchestrator, err := GetOrchestrator(ctx, c, provider, Driver)
 	if err != nil {
 		sentry.CaptureException(err)
 		slog.Error("failed to initialize orchestrator", slog.Any("err", err))

@@ -1,16 +1,28 @@
 package provider
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/deepsourcecorp/runner/httperror"
+	"github.com/deepsourcecorp/runner/router"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/exp/slog"
 )
 
+// Provider interface defines the methods that each VCS provider should implement.
+type Handler interface {
+	HandleAPI(c echo.Context) error
+	HandleWebhook(c echo.Context) error
+	HandleInstallation(c echo.Context) error
+}
+
+type Authenticator interface {
+	RemoteURL(appID string, sourceURL string, extra map[string]interface{}) (string, error)
+}
+
 var (
-	ErrNoVCS = httperror.Error{Message: "no VCS provider found for the given app ID"}
-	ErrNoApp = &httperror.Error{Message: "no app found for the given app ID"}
+	ErrNoProvider      = errors.New("no provider found for app")
+	ErrNoAuthenticator = errors.New("no authenticator found for app")
 )
 
 // Adapter is a unified interface for all VCS providers.  We maintain a map
@@ -18,36 +30,41 @@ var (
 // on the app ID in the request.  The adapter then delegates the request to
 // the chosen provider.
 type Adapter struct {
-	providers map[string]Provider
-	apps      map[string]*App
+	handlers       map[string]Handler
+	authenticators map[string]Authenticator
 }
 
 // New creates a new provider facade.
-func NewAdapter(apps map[string]*App, githubProvider Provider) *Adapter {
+func NewAdapter(handlers map[string]Handler, authenticators map[string]Authenticator) *Adapter {
 	return &Adapter{
-		providers: map[string]Provider{
-			"github": githubProvider,
-		},
-		apps: apps,
+		handlers:       handlers,
+		authenticators: authenticators,
 	}
+}
+
+func (a *Adapter) AddRoutes(r router.Router) router.Router {
+	r.AddRoute("*", "apps/:app_id/webhook", a.HandleWebhook)
+	r.AddRoute("*", "apps/:app_id/api/*", a.HandleAPI)
+	r.AddRoute("*", "apps/:app_id/installation/new", a.HandleInstallation)
+	return r
 }
 
 // HandleAPI handles API requests for a specific app.
 func (a *Adapter) HandleAPI(c echo.Context) error {
-	provider, err := a.getProvider(c.Param("app_id"))
-	if err != nil {
-		slog.Error("failed to get provider", slog.Any("err", err))
-		return httperror.ErrAppInvalid(err)
+	provider := a.handlers[c.Param("app_id")]
+	if provider == nil {
+		slog.Error("no provider found for app", slog.Any("app_id", c.Param("app_id")))
+		return httperror.ErrBadRequest(ErrNoProvider)
 	}
 	return provider.HandleAPI(c)
 }
 
 // HandleWebhook handles webhook requests for a specific app.
 func (a *Adapter) HandleWebhook(c echo.Context) error {
-	provider, err := a.getProvider(c.Param("app_id"))
-	if err != nil {
-		slog.Error("failed to get provider", slog.Any("err", err))
-		return httperror.ErrAppInvalid(err)
+	provider := a.handlers[c.Param("app_id")]
+	if provider == nil {
+		slog.Error("no provider found for app", slog.Any("app_id", c.Param("app_id")))
+		return httperror.ErrBadRequest(ErrNoProvider)
 	}
 	return provider.HandleWebhook(c)
 }
@@ -55,39 +72,23 @@ func (a *Adapter) HandleWebhook(c echo.Context) error {
 // HandleInstallation handles installation requests for a specific app.
 // This is only implemented by some providers.
 func (a *Adapter) HandleInstallation(c echo.Context) error {
-	provider, err := a.getProvider(c.Param("app_id"))
-	if err != nil {
-		slog.Error("failed to get provider", slog.Any("err", err))
-		return httperror.ErrAppInvalid(err)
+	provider := a.handlers[c.Param("app_id")]
+	if provider == nil {
+		slog.Error("no provider found for app", slog.Any("app_id", c.Param("app_id")))
+		return httperror.ErrBadRequest(ErrNoProvider)
 	}
 	return provider.HandleInstallation(c)
 }
 
 // AuthenticatedRemoteURL returns an authenticated remote URL for a specific app,
 // installation, and source URL.
-func (a *Adapter) AuthenticatedRemoteURL(appID, installationID, srcURL string) (string, error) {
-	provider, err := a.getProvider(appID)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate remote url: %w", err)
+func (a *Adapter) RemoteURL(appID string, sourceURL string, extra map[string]any) (string, error) {
+	authenticator := a.authenticators[appID]
+	if authenticator == nil {
+		slog.Error("no authenticator found for app", slog.Any("app_id", appID))
+		return "", httperror.ErrBadRequest(ErrNoAuthenticator)
 	}
-	return provider.AuthenticatedRemoteURL(appID, installationID, srcURL)
-}
-
-// getProvider retrieves the VCS provider based on the given appID.
-func (a *Adapter) getProvider(appID string) (Provider, error) {
-	app := a.apps[appID]
-	if app == nil {
-		return nil, ErrNoApp
-	}
-	return a.providers[app.Provider], nil
-}
-
-// Provider interface defines the methods that each VCS provider should implement.
-type Provider interface {
-	HandleAPI(c echo.Context) error
-	HandleWebhook(c echo.Context) error
-	HandleInstallation(c echo.Context) error
-	AuthenticatedRemoteURL(appID, installationID, srcURL string) (string, error)
+	return authenticator.RemoteURL(appID, sourceURL, extra)
 }
 
 // App represents an application with a specific VCS provider.

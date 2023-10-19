@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInstallationClient_AccessToken(t *testing.T) {
+func TestGetAccessToken(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/app/installations/test-installation-id/access_tokens" {
 			w.WriteHeader(http.StatusCreated)
@@ -20,6 +20,7 @@ func TestInstallationClient_AccessToken(t *testing.T) {
 		}
 		w.WriteHeader(http.StatusNotFound)
 	}))
+	defer server.Close()
 	serverURL, _ := url.Parse(server.URL)
 
 	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
@@ -31,9 +32,7 @@ func TestInstallationClient_AccessToken(t *testing.T) {
 		PrivateKey: privateKey,
 	}
 
-	installationClient := &InstallationClient{app: app, installationID: "test-installation-id", client: http.DefaultClient}
-
-	accessToken, err := installationClient.AccessToken()
+	accessToken, err := GetAccessToken(app, "test-installation-id", http.DefaultClient)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "test-token", accessToken)
@@ -58,9 +57,7 @@ func TestInstallationClient_AccessToken_Error(t *testing.T) {
 		PrivateKey: privateKey,
 	}
 
-	installationClient := &InstallationClient{app: app, installationID: "test-installation-id", client: http.DefaultClient}
-
-	accessToken, err := installationClient.AccessToken()
+	accessToken, err := GetAccessToken(app, "test-installation-id", http.DefaultClient)
 
 	assert.Error(t, err)
 	assert.Equal(t, "", accessToken)
@@ -85,9 +82,7 @@ func TestInstallationClient_AccessToken_Error_JWT(t *testing.T) {
 		PrivateKey: nil,
 	}
 
-	installationClient := &InstallationClient{app: app, installationID: "test-installation-id", client: http.DefaultClient}
-
-	accessToken, err := installationClient.AccessToken()
+	accessToken, err := GetAccessToken(app, "test-installation-id", http.DefaultClient)
 
 	assert.Error(t, err)
 	assert.Equal(t, "", accessToken)
@@ -113,9 +108,7 @@ func TestInstallationClient_AccessToken_Error_InvalidResponse(t *testing.T) {
 		PrivateKey: privateKey,
 	}
 
-	installationClient := &InstallationClient{app: app, installationID: "test-installation-id", client: http.DefaultClient}
-
-	accessToken, err := installationClient.AccessToken()
+	accessToken, err := GetAccessToken(app, "test-installation-id", http.DefaultClient)
 
 	assert.Error(t, err)
 	assert.Equal(t, "", accessToken)
@@ -133,7 +126,5 @@ func TestInstallationClient_ProxyURL(t *testing.T) {
 		PrivateKey: privateKey,
 	}
 
-	installationClient := &InstallationClient{app: app, installationID: "test-installation-id", client: http.DefaultClient}
-
-	assert.Equal(t, "https://test.com/test", installationClient.ProxyURL("/apps/test-app-id/api/test").String())
+	assert.Equal(t, "https://test.com/test", app.StripAPIURL("/apps/test-app-id/api/test").String())
 }

@@ -59,3 +59,29 @@ func (r *WebhookRequest) Validate() error {
 	}
 	return nil
 }
+
+type InstallationRequest struct {
+	AppID string `param:"app_id"`
+}
+
+func NewInstallationRequest(c echo.Context) (*InstallationRequest, error) {
+	req := &InstallationRequest{}
+	if err := c.Bind(req); err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
+type RemoteURLRequest struct {
+	AppID          string
+	InstallationID string
+	SourceURL      string
+}
+
+func NewRemoteURLRequest(appID, sourceURL string, extra map[string]interface{}) *RemoteURLRequest {
+	return &RemoteURLRequest{
+		AppID:          appID,
+		SourceURL:      sourceURL,
+		InstallationID: extra["installation_id"].(string),
+	}
+}
